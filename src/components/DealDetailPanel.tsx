@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2 } from 'lucide-react';
+import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
 import { toast } from 'sonner';
@@ -39,6 +39,37 @@ function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: 
       <div className="flex-1 min-w-0">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">{label}</p>
         <p className="text-sm text-foreground break-words">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleDescription({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  // Parse into paragraphs, clean up whitespace
+  const paragraphs = text.split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean);
+  const preview = paragraphs[0] || '';
+  const isLong = paragraphs.length > 1 || preview.length > 120;
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">Description</p>
+        <div className={`text-sm text-foreground leading-relaxed ${!open && isLong ? 'line-clamp-2' : ''}`}>
+          {paragraphs.map((p, i) => (
+            <p key={i} className={i > 0 ? 'mt-1.5' : ''}>{p}</p>
+          ))}
+        </div>
+        {isLong && (
+          <button
+            onClick={() => setOpen(!open)}
+            className="text-[11px] text-primary hover:underline mt-1 flex items-center gap-0.5"
+          >
+            <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+            {open ? 'Show less' : 'Show more'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -96,7 +127,7 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
         } />
         <Field icon={MapPin} label="Country" value={deal.country} />
         {deal.address && <Field label="Address" value={deal.address} />}
-        {deal.description && <Field label="Description" value={deal.description} />}
+        {deal.description && <CollapsibleDescription text={deal.description} />}
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
