@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, User, DollarSign, Calendar, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Deal {
+export interface Deal {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -24,6 +24,7 @@ interface Deal {
 
 interface Props {
   deal: Deal;
+  onClick?: (deal: Deal) => void;
 }
 
 const STATUS_BORDER: Record<string, string> = {
@@ -47,17 +48,33 @@ function fmtCurrency(n: number) {
   }).format(n);
 }
 
-export function DealCard({ deal }: Props) {
+export function DealCard({ deal, onClick }: Props) {
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
   const value = deal.deal_value || 0;
   const acv = deal.actual_acv || 0;
 
   return (
-    <Card className={`border-l-[3px] ${STATUS_BORDER[deal.status] || 'border-l-muted-foreground'} border-border/40 bg-card/80 p-3.5 space-y-2.5 hover:bg-card hover:border-border/70 transition-colors cursor-default group`}>
-      {/* Contact + Company */}
-      <div className="space-y-1">
+    <Card
+      className={`border-l-[3px] ${STATUS_BORDER[deal.status] || 'border-l-muted-foreground'} border-border/40 bg-card/80 p-3.5 space-y-2.5 hover:bg-card hover:border-border/70 transition-colors cursor-pointer group active:scale-[0.98]`}
+      onClick={() => onClick?.(deal)}
+    >
+      {/* Company — prominent */}
+      {deal.company && (
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 shrink-0 text-primary" />
+          <p className="text-sm font-bold text-foreground truncate">{deal.company}</p>
+          {deal.company_size && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal shrink-0">
+              {deal.company_size}
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Contact */}
+      <div className="space-y-0.5">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-foreground leading-tight truncate">{name}</p>
+          <p className="text-xs text-muted-foreground leading-tight truncate">{name}</p>
           {deal.country && (
             <span className="shrink-0 text-[11px] text-muted-foreground flex items-center gap-0.5">
               <MapPin className="h-3 w-3" />
@@ -66,18 +83,7 @@ export function DealCard({ deal }: Props) {
           )}
         </div>
         {deal.job_title && (
-          <p className="text-xs text-muted-foreground truncate">{deal.job_title}</p>
-        )}
-        {deal.company && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Building2 className="h-3 w-3 shrink-0" />
-            <span className="truncate">{deal.company}</span>
-            {deal.company_size && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                {deal.company_size}
-              </Badge>
-            )}
-          </div>
+          <p className="text-[11px] text-muted-foreground/70 truncate">{deal.job_title}</p>
         )}
       </div>
 
