@@ -8,7 +8,8 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut } from 'lucide-react';
+import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function fmtCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -51,6 +52,18 @@ export default function Dashboard() {
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-lg font-bold tracking-tight">Deal Tracker</h1>
+            <nav className="ml-6 flex items-center gap-1">
+              <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
+                <BarChart3 className="h-4 w-4" />
+                Dashboard
+              </Button>
+              <Link to="/pipeline">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
+                  <Kanban className="h-4 w-4" />
+                  Pipeline
+                </Button>
+              </Link>
+            </nav>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
             <LogOut className="mr-2 h-4 w-4" />

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Pipeline from "./pages/Pipeline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
