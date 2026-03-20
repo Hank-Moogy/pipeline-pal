@@ -8,7 +8,7 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban } from 'lucide-react';
+import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 
