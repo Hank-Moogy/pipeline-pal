@@ -125,7 +125,7 @@ function EditableNextSteps({ deal }: { deal: Deal }) {
             className="w-full text-left group/ns"
           >
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {deal.next_steps || <span className="text-muted-foreground/50 italic">Click to add next steps…</span>}
+              {value || <span className="text-muted-foreground/50 italic">Click to add next steps…</span>}
             </p>
             <span className="text-[10px] text-muted-foreground/40 group-hover/ns:text-primary transition-colors">Click to edit</span>
           </button>
