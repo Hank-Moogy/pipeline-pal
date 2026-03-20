@@ -64,6 +64,7 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
                   fmt(value),
                   props.payload.status,
                 ]}
+                itemStyle={{ color: 'hsl(210, 20%, 92%)' }}
                 labelStyle={{ display: 'none' }}
                 cursor={{ fill: 'hsl(225, 12%, 14%)' }}
               />
