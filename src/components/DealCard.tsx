@@ -21,6 +21,13 @@ export interface Deal {
   lost_reason: string | null;
   closed_date: string | null;
   status: string;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  address: string | null;
+  description: string | null;
+  nb_interactions: number | null;
+  strongest_connection: string | null;
 }
 
 interface Props {

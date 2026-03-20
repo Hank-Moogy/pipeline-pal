@@ -6,6 +6,7 @@ export interface RawCsvRow {
   lastname: string;
   companies: string;
   jobTitle: string;
+  description: string;
   Status: string;
   'Deal value': string;
   'Actual ACV': string;
@@ -17,6 +18,16 @@ export interface RawCsvRow {
   'Closed date': string;
   'Lost reason': string;
   lastInteraction: string;
+  favoriteEmail: string;
+  emails: string;
+  favoritePhone: string;
+  phones: string;
+  favoriteUrl: string;
+  urls: string;
+  favoriteAddress: string;
+  addresses: string;
+  nbInteractions: string;
+  strongestConnection: string;
 }
 
 export interface ParsedDeal {
@@ -36,6 +47,20 @@ export interface ParsedDeal {
   closed_date: string | null;
   lost_reason: string;
   last_interaction: string | null;
+  email: string;
+  phone: string;
+  linkedin_url: string;
+  address: string;
+  description: string;
+  nb_interactions: number;
+  strongest_connection: string;
+}
+
+function extractLinkedIn(urls: string): string {
+  if (!urls) return '';
+  const parts = urls.split(',');
+  const li = parts.find((u) => u.includes('linkedin.com'));
+  return li?.trim() || '';
 }
 
 export function parseCsvFile(file: File): Promise<ParsedDeal[]> {
@@ -61,6 +86,13 @@ export function parseCsvFile(file: File): Promise<ParsedDeal[]> {
           closed_date: row['Closed date'] || null,
           lost_reason: row['Lost reason'] || '',
           last_interaction: row.lastInteraction || null,
+          email: row.favoriteEmail || row.emails?.split(',')[0]?.trim() || '',
+          phone: row.favoritePhone || row.phones?.split(',')[0]?.trim() || '',
+          linkedin_url: extractLinkedIn(row.urls || row.favoriteUrl || ''),
+          address: row.favoriteAddress || row.addresses?.split(',')[0]?.trim() || '',
+          description: row.description || '',
+          nb_interactions: parseInt(row.nbInteractions) || 0,
+          strongest_connection: row.strongestConnection || '',
         }));
         resolve(deals);
       },
