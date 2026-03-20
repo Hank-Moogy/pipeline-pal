@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deals: {
+        Row: {
+          actual_acv: number | null
+          closed_date: string | null
+          company: string | null
+          company_size: string | null
+          company_vertical: string | null
+          country: string | null
+          created_at: string
+          deal_value: number | null
+          external_id: string | null
+          first_name: string | null
+          id: string
+          job_title: string | null
+          last_interaction: string | null
+          last_name: string | null
+          lost_reason: string | null
+          next_steps: string | null
+          prospect_owner: string | null
+          status: string
+          upload_id: string
+        }
+        Insert: {
+          actual_acv?: number | null
+          closed_date?: string | null
+          company?: string | null
+          company_size?: string | null
+          company_vertical?: string | null
+          country?: string | null
+          created_at?: string
+          deal_value?: number | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_interaction?: string | null
+          last_name?: string | null
+          lost_reason?: string | null
+          next_steps?: string | null
+          prospect_owner?: string | null
+          status?: string
+          upload_id: string
+        }
+        Update: {
+          actual_acv?: number | null
+          closed_date?: string | null
+          company?: string | null
+          company_size?: string | null
+          company_vertical?: string | null
+          country?: string | null
+          created_at?: string
+          deal_value?: number | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_interaction?: string | null
+          last_name?: string | null
+          lost_reason?: string | null
+          next_steps?: string | null
+          prospect_owner?: string | null
+          status?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      uploads: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          id: string
+          record_count: number | null
+          upload_date: string
+          user_id: string
+          week_label: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          record_count?: number | null
+          upload_date?: string
+          user_id: string
+          week_label: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          record_count?: number | null
+          upload_date?: string
+          user_id?: string
+          week_label?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
