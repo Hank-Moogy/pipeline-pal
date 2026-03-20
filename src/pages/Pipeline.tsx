@@ -152,6 +152,12 @@ export default function Pipeline() {
           })}
         </div>
       </div>
+
+      <DealDetailPanel
+        deal={selectedDeal}
+        open={!!selectedDeal}
+        onClose={() => setSelectedDeal(null)}
+      />
     </div>
   );
 }
