@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_notes: {
+        Row: {
+          author: string | null
+          content: string
+          created_at: string
+          deal_id: string
+          id: string
+        }
+        Insert: {
+          author?: string | null
+          content: string
+          created_at?: string
+          deal_id: string
+          id?: string
+        }
+        Update: {
+          author?: string | null
+          content?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           actual_acv: number | null
