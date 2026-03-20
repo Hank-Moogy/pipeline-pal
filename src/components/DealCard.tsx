@@ -53,7 +53,7 @@ export function DealCard({ deal }: Props) {
   const acv = deal.actual_acv || 0;
 
   return (
-    <Card className="border-border/40 bg-card p-3.5 space-y-2.5 hover:border-border/70 transition-colors cursor-default group">
+    <Card className={`border-l-[3px] ${STATUS_BORDER[deal.status] || 'border-l-muted-foreground'} border-border/40 bg-card/80 p-3.5 space-y-2.5 hover:bg-card hover:border-border/70 transition-colors cursor-default group`}>
       {/* Contact + Company */}
       <div className="space-y-1">
         <div className="flex items-start justify-between gap-2">
