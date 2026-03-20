@@ -152,16 +152,9 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
         <Field label="Closed Date" value={fmtDate(deal.closed_date)} />
         <OwnerSelect deal={deal} uploadId={uploadId} />
 
-        {deal.next_steps && (
-          <>
-            <Separator className="my-3 bg-border/30" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
-            <div className="flex items-start gap-3 py-2.5">
-              <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-              <p className="text-sm text-foreground leading-relaxed">{deal.next_steps}</p>
-            </div>
-          </>
-        )}
+        <Separator className="my-3 bg-border/30" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
+        <EditableNextSteps deal={deal} />
 
         {deal.lost_reason && (
           <>
