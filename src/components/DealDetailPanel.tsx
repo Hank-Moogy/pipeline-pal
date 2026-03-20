@@ -134,6 +134,7 @@ function EditableNextSteps({ deal }: { deal: Deal }) {
   );
 }
 
+function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
   const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
   const updateDeal = useUpdateDeal();
 
