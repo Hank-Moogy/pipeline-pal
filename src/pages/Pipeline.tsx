@@ -3,6 +3,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploads, useDealsForUpload } from '@/hooks/useDeals';
 import { WeekSelector } from '@/components/WeekSelector';
 import { DealCard } from '@/components/DealCard';
+import { DealDetailPanel } from '@/components/DealDetailPanel';
+import type { Deal } from '@/components/DealCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
@@ -35,6 +37,7 @@ export default function Pipeline() {
   const { signOut } = useAuth();
   const { data: uploads = [] } = useUploads();
   const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     if (uploads.length > 0 && !selectedUploadId) {
@@ -135,7 +138,7 @@ export default function Pipeline() {
                 <ScrollArea className="flex-1 px-2 pb-2" style={{ maxHeight: 'calc(100vh - 180px)' }}>
                   <div className="space-y-2">
                     {stageDeals.map((deal) => (
-                      <DealCard key={deal.id} deal={deal} />
+                      <DealCard key={deal.id} deal={deal} onClick={setSelectedDeal} />
                     ))}
                     {stageDeals.length === 0 && (
                       <div className="py-8 text-center text-xs text-muted-foreground/60">
@@ -149,6 +152,12 @@ export default function Pipeline() {
           })}
         </div>
       </div>
+
+      <DealDetailPanel
+        deal={selectedDeal}
+        open={!!selectedDeal}
+        onClose={() => setSelectedDeal(null)}
+      />
     </div>
   );
 }
