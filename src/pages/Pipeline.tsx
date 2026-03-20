@@ -148,6 +148,7 @@ export default function Pipeline() {
               onSelect={setSelectedUploadId}
               label="Week"
             />
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out

@@ -66,10 +66,13 @@ export default function Dashboard() {
               </Link>
             </nav>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
