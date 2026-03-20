@@ -137,6 +137,7 @@ export default function Pipeline() {
                 {/* Cards */}
                 <ScrollArea className="flex-1 px-2 pb-2" style={{ maxHeight: 'calc(100vh - 180px)' }}>
                   <div className="space-y-2">
+                    {stageDeals.map((deal) => (
                       <DealCard key={deal.id} deal={deal} onClick={setSelectedDeal} />
                     ))}
                     {stageDeals.length === 0 && (
