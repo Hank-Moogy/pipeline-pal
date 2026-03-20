@@ -110,11 +110,13 @@ export function useDistinctOwners(uploadId: string | null) {
       const { data, error } = await supabase
         .from('deals')
         .select('prospect_owner')
-        .eq('upload_id', uploadId)
-        .not('prospect_owner', 'is', null);
+        .eq('upload_id', uploadId);
       if (error) throw error;
-      const unique = [...new Set((data || []).map((d) => d.prospect_owner).filter(Boolean))] as string[];
-      return unique.sort();
+      // Split comma-separated owners and deduplicate
+      const all = (data || [])
+        .flatMap((d) => (d.prospect_owner || '').split(',').map((s: string) => s.trim()))
+        .filter((s) => s.length > 0);
+      return [...new Set(all)].sort();
     },
     enabled: !!uploadId,
   });

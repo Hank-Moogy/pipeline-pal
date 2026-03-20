@@ -62,7 +62,7 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
       <User className="h-4 w-4 mt-2.5 text-muted-foreground shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1">Prospect Owner</p>
-        <Select value={deal.prospect_owner || ''} onValueChange={handleChange}>
+        <Select value={deal.prospect_owner || undefined} onValueChange={handleChange}>
           <SelectTrigger className="h-8 text-sm bg-secondary/40 border-border/40">
             <SelectValue placeholder="Select owner…" />
           </SelectTrigger>
