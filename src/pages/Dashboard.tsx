@@ -64,6 +64,7 @@ export default function Dashboard() {
                 </Button>
               </Link>
             </nav>
+          </div>
           <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
             <LogOut className="mr-2 h-4 w-4" />
             Sign out
