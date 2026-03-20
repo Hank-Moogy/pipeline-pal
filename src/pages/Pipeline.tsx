@@ -233,6 +233,7 @@ export default function Pipeline() {
         deal={selectedDeal}
         open={!!selectedDeal}
         onClose={() => setSelectedDeal(null)}
+        uploadId={selectedUploadId}
       />
     </div>
   );

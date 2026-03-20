@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, User, DollarSign, Calendar, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getVerticalColors } from '@/lib/vertical-colors';
 
 export interface Deal {
   id: string;
@@ -119,11 +120,14 @@ export function DealCard({ deal, onClick }: Props) {
       </div>
 
       {/* Vertical badge */}
-      {deal.company_vertical && (
-        <Badge variant="outline" className="text-[10px] font-normal border-border/50">
-          {deal.company_vertical}
-        </Badge>
-      )}
+      {deal.company_vertical && (() => {
+        const vc = getVerticalColors(deal.company_vertical);
+        return (
+          <Badge variant="outline" className={`text-[10px] font-medium ${vc.bg} ${vc.text} ${vc.border}`}>
+            {deal.company_vertical}
+          </Badge>
+        );
+      })()}
 
       {/* Next steps / lost reason */}
       {deal.next_steps && (
