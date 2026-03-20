@@ -13,6 +13,7 @@ import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -147,6 +148,7 @@ export default function Pipeline() {
               onSelect={setSelectedUploadId}
               label="Week"
             />
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
