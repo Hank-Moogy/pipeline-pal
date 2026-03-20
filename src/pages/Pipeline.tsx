@@ -13,6 +13,7 @@ import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
