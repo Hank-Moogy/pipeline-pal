@@ -26,6 +26,19 @@ interface Props {
   deal: Deal;
 }
 
+const STATUS_BORDER: Record<string, string> = {
+  'Lead': 'border-l-[hsl(210,80%,65%)]',
+  'Prospect': 'border-l-[hsl(200,70%,60%)]',
+  'Email follow up': 'border-l-[hsl(190,60%,55%)]',
+  'Discovery Meeting': 'border-l-[hsl(38,80%,60%)]',
+  'Tech Qualification': 'border-l-[hsl(32,75%,58%)]',
+  'Design proposal': 'border-l-[hsl(280,50%,65%)]',
+  'Committed': 'border-l-[hsl(142,55%,55%)]',
+  'Closed-won': 'border-l-[hsl(142,65%,42%)]',
+  'Closed-lost': 'border-l-destructive',
+  'Recycle': 'border-l-muted-foreground',
+};
+
 function fmtCurrency(n: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
