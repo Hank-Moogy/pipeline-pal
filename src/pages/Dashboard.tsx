@@ -8,7 +8,8 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut } from 'lucide-react';
+import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function fmtCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
