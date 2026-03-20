@@ -49,6 +49,7 @@ export type Database = {
       deals: {
         Row: {
           actual_acv: number | null
+          address: string | null
           closed_date: string | null
           company: string | null
           company_size: string | null
@@ -56,20 +57,27 @@ export type Database = {
           country: string | null
           created_at: string
           deal_value: number | null
+          description: string | null
+          email: string | null
           external_id: string | null
           first_name: string | null
           id: string
           job_title: string | null
           last_interaction: string | null
           last_name: string | null
+          linkedin_url: string | null
           lost_reason: string | null
+          nb_interactions: number | null
           next_steps: string | null
+          phone: string | null
           prospect_owner: string | null
           status: string
+          strongest_connection: string | null
           upload_id: string
         }
         Insert: {
           actual_acv?: number | null
+          address?: string | null
           closed_date?: string | null
           company?: string | null
           company_size?: string | null
@@ -77,20 +85,27 @@ export type Database = {
           country?: string | null
           created_at?: string
           deal_value?: number | null
+          description?: string | null
+          email?: string | null
           external_id?: string | null
           first_name?: string | null
           id?: string
           job_title?: string | null
           last_interaction?: string | null
           last_name?: string | null
+          linkedin_url?: string | null
           lost_reason?: string | null
+          nb_interactions?: number | null
           next_steps?: string | null
+          phone?: string | null
           prospect_owner?: string | null
           status?: string
+          strongest_connection?: string | null
           upload_id: string
         }
         Update: {
           actual_acv?: number | null
+          address?: string | null
           closed_date?: string | null
           company?: string | null
           company_size?: string | null
@@ -98,16 +113,22 @@ export type Database = {
           country?: string | null
           created_at?: string
           deal_value?: number | null
+          description?: string | null
+          email?: string | null
           external_id?: string | null
           first_name?: string | null
           id?: string
           job_title?: string | null
           last_interaction?: string | null
           last_name?: string | null
+          linkedin_url?: string | null
           lost_reason?: string | null
+          nb_interactions?: number | null
           next_steps?: string | null
+          phone?: string | null
           prospect_owner?: string | null
           status?: string
+          strongest_connection?: string | null
           upload_id?: string
         }
         Relationships: [
