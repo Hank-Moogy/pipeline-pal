@@ -1,53 +1,45 @@
 
 
-# B2B Sales Pipeline Deal Tracker
+## Granola Transcript Sync -- Implementation Plan
 
-## Overview
-A dark-themed, team-accessible dashboard that tracks your sales pipeline week over week. Upload your CRM CSV export every Monday and instantly see how your pipeline is evolving.
+### What was found
 
-## Authentication
-- Email/password signup & login for team members
-- Protected dashboard behind auth
+I scanned your last 30 days of Granola meetings (7 meetings) against all deals in the database, matching on company name and contact name/email. Two matches were identified:
 
-## Core Flow
-1. **CSV Upload Page** — Upload your weekly CRM export (matching the people.csv format). Each upload is tagged with its upload date/week.
-2. **Data Processing** — Parse CSV, extract key fields: deal status (`Status`), deal value (`Deal value`), company, prospect owner, and timestamps. Store in Supabase with week identifier.
+| Meeting | Date | Matched Deal | Match Reason |
+|---|---|---|---|
+| UGO NICOLAS and Samori Osei | Mar 20 | Ugo Nicolas @ Blump Studio (Discovery Meeting) | Name + email match |
+| Mago Intro with Sam (Ben Sharp-Fox) | Mar 19 | James Thomas @ Prime Video & Amazon MGM Studios | Company domain match (amazon.com) |
 
-## Dashboard Metrics (with Week-over-Week Δ)
-Each metric shows current week value + change from previous week (green/red indicators):
+5 meetings had no matching deal (Kinetyca, WeMake, Abdul Razaq, Calculator, Vĩ Hào Trần).
 
-1. **Deals by Status** — Bar chart + table showing # of deals per status (Lead, Prospect, Email follow up, Discovery Meeting, Tech Qualification, Design proposal, Committed, Closed-won, Closed-lost, Recycle)
-2. **Total Deal Value by Status** — Sum of `Deal value` grouped by status
-3. **Weighted Amount by Status** — Deal value × stage probability weight per status
-4. **Average Days in Status** — How long deals have stayed in their current status (computed from interaction dates)
-5. **Total Pipeline Value** — Sum of all active deal values (excluding Closed-won, Closed-lost)
-6. **Total Weighted Pipeline Value** — Sum of all weighted amounts
+### Implementation Plan
 
-## Stage Probability Weights
-| Stage | Weight |
-|---|---|
-| Lead | 10% |
-| Prospect | 10% |
-| Email follow up | 10% |
-| Discovery Meeting | 40% |
-| Tech Qualification | 60% |
-| Design proposal | 60% |
-| Committed | 80% |
-| Closed-won | 100% |
-| Closed-lost | 0% |
-| Recycle | 5% |
-| No status | 0% |
+#### Step 1: Add `note_type` column to `deal_notes`
+- Add a `note_type` text column (default `'note'`) to distinguish regular notes from transcripts
+- Values: `'note'` (default) or `'transcript'`
 
-## Design
-- Dark background with glowing accent cards
-- Metric cards with large numbers, WoW delta badges (↑ green / ↓ red)
-- Charts using Recharts (bar + donut)
-- Week selector dropdown to compare any two weeks
-- Responsive layout
+#### Step 2: Insert the two matched transcripts
+- Insert the Blump Studio transcript into `deal_notes` for deal `7468f10a` with `note_type = 'transcript'`
+- Insert the Amazon/Ben Sharp-Fox transcript into `deal_notes` for deal `b68eda24` with `note_type = 'transcript'`
+- Author will be set to `'Granola'`, content will be the full transcript text
 
-## Tech Stack
-- React + TypeScript + Tailwind (dark theme)
-- Supabase for auth, database (uploads table, deals table, weekly snapshots)
-- Recharts for data visualization
-- CSV parsing with Papa Parse
+#### Step 3: Update the UI to show transcript vs note labels
+- In the Notes tab of the deal detail panel, display a badge/label distinguishing "Note" from "Transcript"
+- Style transcripts differently (e.g., different icon or color) so they're easy to identify
+- Update the `useNotesForDeal` hook and types to include `note_type`
+
+#### Step 4: Build the edge function for automated sync
+- Create a `sync-granola-transcripts` edge function that:
+  - Fetches recent Granola meetings via the MCP gateway
+  - Matches meetings to deals by company name and contact name/email
+  - Fetches transcripts for matched meetings
+  - Inserts them as `note_type = 'transcript'` if not already synced
+  - Tracks synced meeting IDs to avoid duplicates
+- Schedule it to run twice daily via pg_cron or an external trigger
+
+### Technical Details
+- The `deal_notes` table needs a schema migration for the new `note_type` column
+- The edge function will use the Granola connector gateway for authentication
+- Duplicate prevention: store the Granola `meeting_id` in a new column or check by author + date to avoid re-importing
 
