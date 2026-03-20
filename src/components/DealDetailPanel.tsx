@@ -85,7 +85,18 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Contact</p>
         <Field icon={User} label="Name" value={name} />
         <Field icon={Briefcase} label="Job Title" value={deal.job_title} />
+        <Field icon={Mail} label="Email" value={
+          deal.email ? <a href={`mailto:${deal.email}`} className="text-primary hover:underline">{deal.email}</a> : null
+        } />
+        <Field icon={Phone} label="Phone" value={
+          deal.phone ? <a href={`tel:${deal.phone}`} className="text-primary hover:underline">{deal.phone}</a> : null
+        } />
+        <Field icon={Link2} label="LinkedIn" value={
+          deal.linkedin_url ? <a href={deal.linkedin_url.startsWith('http') ? deal.linkedin_url : `https://${deal.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">{deal.linkedin_url.replace(/https?:\/\/(www\.)?/, '')}</a> : null
+        } />
         <Field icon={MapPin} label="Country" value={deal.country} />
+        {deal.address && <Field label="Address" value={deal.address} />}
+        {deal.description && <Field label="Description" value={deal.description} />}
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
