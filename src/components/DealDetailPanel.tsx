@@ -75,6 +75,7 @@ function CollapsibleDescription({ text }: { text: string }) {
   );
 }
 
+function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
   const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
   const updateDeal = useUpdateDeal();
 
