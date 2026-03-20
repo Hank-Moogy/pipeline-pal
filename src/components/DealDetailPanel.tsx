@@ -96,7 +96,7 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
         } />
         <Field icon={MapPin} label="Country" value={deal.country} />
         {deal.address && <Field label="Address" value={deal.address} />}
-        {deal.description && <Field label="Description" value={deal.description} />}
+        {deal.description && <CollapsibleDescription text={deal.description} />}
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
