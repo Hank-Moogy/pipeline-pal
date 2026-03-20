@@ -52,7 +52,18 @@ export default function Dashboard() {
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-lg font-bold tracking-tight">Deal Tracker</h1>
-          </div>
+            <nav className="ml-6 flex items-center gap-1">
+              <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
+                <BarChart3 className="h-4 w-4" />
+                Dashboard
+              </Button>
+              <Link to="/pipeline">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
+                  <Kanban className="h-4 w-4" />
+                  Pipeline
+                </Button>
+              </Link>
+            </nav>
           <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
             <LogOut className="mr-2 h-4 w-4" />
             Sign out
