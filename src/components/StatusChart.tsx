@@ -15,6 +15,11 @@ const STATUS_COLORS: Record<string, string> = {
   'Recycle': 'hsl(215, 14%, 52%)',
 };
 
+function getCssVar(name: string) {
+  const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return `hsl(${val})`;
+}
+
 interface Props {
   metrics: StatusMetric[];
   dataKey: 'count' | 'totalValue' | 'weightedValue';
@@ -26,6 +31,12 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
   const data = metrics.filter((m) => m.count > 0);
   const fmt = formatValue || ((v: number) => v.toLocaleString());
 
+  const bg = getCssVar('--card');
+  const border = getCssVar('--border');
+  const fg = getCssVar('--foreground');
+  const muted = getCssVar('--muted-foreground');
+  const accent = getCssVar('--accent');
+
   return (
     <Card className="border-border/40 bg-card">
       <CardHeader className="pb-2">
@@ -35,28 +46,28 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, bottom: 24, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(225, 10%, 18%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={border} vertical={false} />
               <XAxis
                 dataKey="status"
-                tick={{ fill: 'hsl(215, 14%, 52%)', fontSize: 11 }}
+                tick={{ fill: muted, fontSize: 11 }}
                 angle={-35}
                 textAnchor="end"
                 height={60}
-                axisLine={{ stroke: 'hsl(225, 10%, 18%)' }}
+                axisLine={{ stroke: border }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fill: 'hsl(215, 14%, 52%)', fontSize: 11 }}
+                tick={{ fill: muted, fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) => fmt(v)}
               />
               <Tooltip
                 contentStyle={{
-                  background: 'hsl(225, 14%, 11%)',
-                  border: '1px solid hsl(225, 10%, 18%)',
+                  background: bg,
+                  border: `1px solid ${border}`,
                   borderRadius: '8px',
-                  color: 'hsl(210, 20%, 92%)',
+                  color: fg,
                   fontSize: '13px',
                   padding: '8px 12px',
                 }}
@@ -64,13 +75,13 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
                   fmt(value),
                   props.payload.status,
                 ]}
-                itemStyle={{ color: 'hsl(210, 20%, 92%)' }}
+                itemStyle={{ color: fg }}
                 labelStyle={{ display: 'none' }}
-                cursor={{ fill: 'hsl(225, 12%, 14%)' }}
+                cursor={{ fill: accent }}
               />
               <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
-                  <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || 'hsl(215, 14%, 52%)'} />
+                  <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || muted} />
                 ))}
               </Bar>
             </BarChart>
