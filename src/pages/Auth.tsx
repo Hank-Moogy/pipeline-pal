@@ -30,6 +30,10 @@ export default function Auth() {
     setSubmitting(true);
 
     try {
+      if (!email.endsWith('@mago.studio')) {
+        throw new Error('Only @mago.studio email addresses are allowed.');
+      }
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
