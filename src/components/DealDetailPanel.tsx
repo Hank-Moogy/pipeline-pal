@@ -75,6 +75,65 @@ function CollapsibleDescription({ text }: { text: string }) {
   );
 }
 
+function EditableNextSteps({ deal }: { deal: Deal }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(deal.next_steps || '');
+  const updateDeal = useUpdateDeal();
+
+  const handleSave = async () => {
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { next_steps: value.trim() } });
+      toast.success('Next steps updated');
+      setEditing(false);
+    } catch {
+      toast.error('Failed to update');
+    }
+  };
+
+  // Sync when deal changes
+  if (!editing && value !== (deal.next_steps || '')) {
+    setValue(deal.next_steps || '');
+  }
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+      <div className="flex-1 min-w-0">
+        {editing ? (
+          <div className="space-y-2">
+            <Textarea
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className="min-h-[80px] resize-none bg-secondary/40 border-border/40 text-sm"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSave(); }}
+            />
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={handleSave} disabled={updateDeal.isPending} className="h-7 text-xs gap-1">
+                {updateDeal.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { setValue(deal.next_steps || ''); setEditing(false); }} className="h-7 text-xs">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            className="w-full text-left group/ns"
+          >
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+              {deal.next_steps || <span className="text-muted-foreground/50 italic">Click to add next steps…</span>}
+            </p>
+            <span className="text-[10px] text-muted-foreground/40 group-hover/ns:text-primary transition-colors">Click to edit</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
   const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
   const updateDeal = useUpdateDeal();
@@ -152,16 +211,9 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
         <Field label="Closed Date" value={fmtDate(deal.closed_date)} />
         <OwnerSelect deal={deal} uploadId={uploadId} />
 
-        {deal.next_steps && (
-          <>
-            <Separator className="my-3 bg-border/30" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
-            <div className="flex items-start gap-3 py-2.5">
-              <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-              <p className="text-sm text-foreground leading-relaxed">{deal.next_steps}</p>
-            </div>
-          </>
-        )}
+        <Separator className="my-3 bg-border/30" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
+        <EditableNextSteps deal={deal} />
 
         {deal.lost_reason && (
           <>
