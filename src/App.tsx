@@ -7,6 +7,11 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Pipeline from "./pages/Pipeline";
+import Agents from "./pages/Agents";
+import LeadGen from "./pages/agents/LeadGen";
+import PipelineAgent from "./pages/agents/PipelineAgent";
+import CrmAgent from "./pages/agents/CrmAgent";
+import SocialAgent from "./pages/agents/SocialAgent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +26,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/agents" element={<Agents />} />
+            <Route path="/agents/lead-gen" element={<LeadGen />} />
+            <Route path="/agents/pipeline" element={<PipelineAgent />} />
+            <Route path="/agents/crm" element={<CrmAgent />} />
+            <Route path="/agents/social" element={<SocialAgent />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

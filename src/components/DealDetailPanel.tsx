@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic } from 'lucide-react';
+import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
 import { toast } from 'sonner';
@@ -169,6 +170,7 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
 }
 
 function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
+  const navigate = useNavigate();
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
   return (
     <ScrollArea className="h-full">
@@ -226,6 +228,17 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
             </div>
           </>
         )}
+
+        <Separator className="my-3 bg-border/30" />
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 text-xs"
+          onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Generate Outreach with AI
+        </Button>
       </div>
     </ScrollArea>
   );

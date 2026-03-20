@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -130,6 +130,12 @@ export default function Pipeline() {
                 <Kanban className="h-4 w-4" />
                 Pipeline
               </Button>
+              <Link to="/agents">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
+                  <Bot className="h-4 w-4" />
+                  Agents
+                </Button>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">

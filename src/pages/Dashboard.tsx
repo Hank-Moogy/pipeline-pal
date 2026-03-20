@@ -8,7 +8,7 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban } from 'lucide-react';
+import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 
@@ -62,6 +62,12 @@ export default function Dashboard() {
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
                   <Kanban className="h-4 w-4" />
                   Pipeline
+                </Button>
+              </Link>
+              <Link to="/agents">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
+                  <Bot className="h-4 w-4" />
+                  Agents
                 </Button>
               </Link>
             </nav>
