@@ -170,6 +170,7 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
 }
 
 function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
+  const navigate = useNavigate();
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
   return (
     <ScrollArea className="h-full">
