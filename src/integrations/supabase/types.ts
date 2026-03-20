@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_conversations: {
+        Row: {
+          agent_type: string
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_memories: {
+        Row: {
+          agent_type: string
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          memory_type: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          memory_type?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          memory_type?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_settings: {
+        Row: {
+          agent_type: string
+          id: string
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deal_notes: {
         Row: {
           author: string | null
@@ -147,6 +234,182 @@ export type Database = {
           },
         ]
       }
+      email_sequences: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          steps: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          steps?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          steps?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lead_candidates: {
+        Row: {
+          company: string | null
+          company_size: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          feedback: string | null
+          id: string
+          job_title: string | null
+          linkedin_url: string | null
+          rejection_reason: string | null
+          source: string | null
+          status: string
+          user_id: string
+          vertical: string | null
+        }
+        Insert: {
+          company?: string | null
+          company_size?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          feedback?: string | null
+          id?: string
+          job_title?: string | null
+          linkedin_url?: string | null
+          rejection_reason?: string | null
+          source?: string | null
+          status?: string
+          user_id: string
+          vertical?: string | null
+        }
+        Update: {
+          company?: string | null
+          company_size?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          feedback?: string | null
+          id?: string
+          job_title?: string | null
+          linkedin_url?: string | null
+          rejection_reason?: string | null
+          source?: string | null
+          status?: string
+          user_id?: string
+          vertical?: string | null
+        }
+        Relationships: []
+      }
+      outreach_emails: {
+        Row: {
+          body: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          recipient_email: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          sequence_id: string | null
+          sequence_step: number | null
+          status: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          sequence_id?: string | null
+          sequence_step?: number | null
+          status?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          sequence_id?: string | null
+          sequence_step?: number | null
+          status?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_emails_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_emails_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          deal_id: string | null
+          id: string
+          priority: string
+          status: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_actions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -165,6 +428,39 @@ export type Database = {
           display_name?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      social_content: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          platform: string
+          post_text: string | null
+          status: string
+          user_id: string
+          variant_group: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          platform?: string
+          post_text?: string | null
+          status?: string
+          user_id: string
+          variant_group?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          platform?: string
+          post_text?: string | null
+          status?: string
+          user_id?: string
+          variant_group?: string | null
         }
         Relationships: []
       }
@@ -203,7 +499,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_agent_memories: {
+        Args: {
+          match_agent_type: string
+          match_count?: number
+          match_threshold?: number
+          match_user_id: string
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          memory_type: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
