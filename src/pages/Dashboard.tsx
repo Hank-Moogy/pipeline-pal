@@ -64,6 +64,12 @@ export default function Dashboard() {
                   Pipeline
                 </Button>
               </Link>
+              <Link to="/agents">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
+                  <Bot className="h-4 w-4" />
+                  Agents
+                </Button>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-2">
