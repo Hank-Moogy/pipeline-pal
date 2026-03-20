@@ -191,10 +191,10 @@ export function DealDetailPanel({ deal, open, onClose }: Props) {
               )}
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="details" className="flex-1 mt-4 min-h-0">
+          <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden">
             <DetailsTab deal={deal} />
           </TabsContent>
-          <TabsContent value="notes" className="flex-1 mt-4 min-h-0 flex flex-col">
+          <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden flex flex-col">
             <NotesTab dealId={deal.id} />
           </TabsContent>
         </Tabs>
