@@ -20,21 +20,27 @@ export type Database = {
           content: string
           created_at: string
           deal_id: string
+          granola_meeting_id: string | null
           id: string
+          note_type: string
         }
         Insert: {
           author?: string | null
           content: string
           created_at?: string
           deal_id: string
+          granola_meeting_id?: string | null
           id?: string
+          note_type?: string
         }
         Update: {
           author?: string | null
           content?: string
           created_at?: string
           deal_id?: string
+          granola_meeting_id?: string | null
           id?: string
+          note_type?: string
         }
         Relationships: [
           {

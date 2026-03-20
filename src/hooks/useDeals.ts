@@ -46,6 +46,8 @@ export interface DealNote {
   author: string | null;
   content: string;
   created_at: string;
+  note_type: string;
+  granola_meeting_id: string | null;
 }
 
 export function useNotesForDeal(dealId: string | null) {
