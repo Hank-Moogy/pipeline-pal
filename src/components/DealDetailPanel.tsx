@@ -257,19 +257,30 @@ function NotesTab({ dealId }: { dealId: string }) {
           ) : notes.length === 0 ? (
             <p className="text-xs text-muted-foreground/60 py-10 text-center">No notes yet — add one below</p>
           ) : (
-            notes.map((note) => (
-              <div key={note.id} className="rounded-lg bg-secondary/50 border border-border/30 p-3 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  {note.author && <span className="text-xs font-medium text-foreground">{note.author}</span>}
-                  <span className="text-[10px] text-muted-foreground/70 shrink-0">
-                    {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
-                  </span>
+            notes.map((note) => {
+              const isTranscript = note.note_type === 'transcript';
+              return (
+                <div key={note.id} className={`rounded-lg border p-3 space-y-1.5 ${isTranscript ? 'bg-primary/5 border-primary/20' : 'bg-secondary/50 border-border/30'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      {isTranscript && <Mic className="h-3 w-3 text-primary" />}
+                      {note.author && <span className="text-xs font-medium text-foreground">{note.author}</span>}
+                      {isTranscript && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-primary/30 text-primary">
+                          Transcript
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground/70 shrink-0">
+                      {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
+                    {note.content}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
-                  {note.content}
-                </p>
-              </div>
-            ))
+              );
+            }))
           )}
         </div>
       </ScrollArea>
