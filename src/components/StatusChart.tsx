@@ -57,9 +57,14 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
                   border: '1px solid hsl(225, 10%, 18%)',
                   borderRadius: '8px',
                   color: 'hsl(210, 20%, 92%)',
-                  fontSize: '12px',
+                  fontSize: '13px',
+                  padding: '8px 12px',
                 }}
-                formatter={(value: number) => [fmt(value), '']}
+                formatter={(value: number, _name: string, props: any) => [
+                  fmt(value),
+                  props.payload.status,
+                ]}
+                labelStyle={{ display: 'none' }}
                 cursor={{ fill: 'hsl(225, 12%, 14%)' }}
               />
               <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
