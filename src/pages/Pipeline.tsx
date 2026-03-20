@@ -3,6 +3,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploads, useDealsForUpload } from '@/hooks/useDeals';
 import { WeekSelector } from '@/components/WeekSelector';
 import { DealCard } from '@/components/DealCard';
+import { DealDetailPanel } from '@/components/DealDetailPanel';
+import type { Deal } from '@/components/DealCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
