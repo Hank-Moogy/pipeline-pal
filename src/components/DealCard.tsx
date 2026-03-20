@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, User, DollarSign, Calendar, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { getVerticalColors } from '@/lib/vertical-colors';
 
 export interface Deal {
   id: string;
