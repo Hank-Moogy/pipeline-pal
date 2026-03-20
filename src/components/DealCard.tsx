@@ -1,0 +1,122 @@
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Building2, User, DollarSign, Calendar, MapPin } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+
+interface Deal {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company: string | null;
+  job_title: string | null;
+  deal_value: number | null;
+  actual_acv: number | null;
+  country: string | null;
+  company_vertical: string | null;
+  company_size: string | null;
+  prospect_owner: string | null;
+  last_interaction: string | null;
+  next_steps: string | null;
+  lost_reason: string | null;
+  closed_date: string | null;
+  status: string;
+}
+
+interface Props {
+  deal: Deal;
+}
+
+function fmtCurrency(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+export function DealCard({ deal }: Props) {
+  const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
+  const value = deal.deal_value || 0;
+  const acv = deal.actual_acv || 0;
+
+  return (
+    <Card className="border-border/40 bg-card p-3.5 space-y-2.5 hover:border-border/70 transition-colors cursor-default group">
+      {/* Contact + Company */}
+      <div className="space-y-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-foreground leading-tight truncate">{name}</p>
+          {deal.country && (
+            <span className="shrink-0 text-[11px] text-muted-foreground flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" />
+              {deal.country}
+            </span>
+          )}
+        </div>
+        {deal.job_title && (
+          <p className="text-xs text-muted-foreground truncate">{deal.job_title}</p>
+        )}
+        {deal.company && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Building2 className="h-3 w-3 shrink-0" />
+            <span className="truncate">{deal.company}</span>
+            {deal.company_size && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                {deal.company_size}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Value */}
+      <div className="flex items-center gap-3">
+        {value > 0 && (
+          <div className="flex items-center gap-1 text-xs font-medium text-foreground">
+            <DollarSign className="h-3 w-3 text-primary" />
+            {fmtCurrency(value)}
+          </div>
+        )}
+        {acv > 0 && acv !== value && (
+          <span className="text-[11px] text-muted-foreground">
+            ACV {fmtCurrency(acv)}
+          </span>
+        )}
+      </div>
+
+      {/* Meta row */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        {deal.prospect_owner && (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+            <User className="h-3 w-3 shrink-0" />
+            <span className="truncate">{deal.prospect_owner}</span>
+          </div>
+        )}
+        {deal.last_interaction && (
+          <span className="shrink-0 text-[11px] text-muted-foreground flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {formatDistanceToNow(new Date(deal.last_interaction), { addSuffix: true })}
+          </span>
+        )}
+      </div>
+
+      {/* Vertical badge */}
+      {deal.company_vertical && (
+        <Badge variant="outline" className="text-[10px] font-normal border-border/50">
+          {deal.company_vertical}
+        </Badge>
+      )}
+
+      {/* Next steps / lost reason */}
+      {deal.next_steps && (
+        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 border-t border-border/30 pt-2">
+          {deal.next_steps}
+        </p>
+      )}
+      {deal.lost_reason && (
+        <p className="text-[11px] text-destructive leading-relaxed border-t border-border/30 pt-2">
+          Lost: {deal.lost_reason}
+        </p>
+      )}
+    </Card>
+  );
+}
