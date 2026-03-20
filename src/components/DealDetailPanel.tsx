@@ -6,16 +6,19 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useNotesForDeal, useAddNote } from '@/hooks/useDeals';
+import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
 import { toast } from 'sonner';
+import { getVerticalColors } from '@/lib/vertical-colors';
 import type { Deal } from '@/components/DealCard';
 
 interface Props {
   deal: Deal | null;
   open: boolean;
   onClose: () => void;
+  uploadId?: string | null;
 }
 
 function fmtCurrency(n: number) {
@@ -41,7 +44,40 @@ function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: 
   );
 }
 
-function DetailsTab({ deal }: { deal: Deal }) {
+function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
+  const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
+  const updateDeal = useUpdateDeal();
+
+  const handleChange = async (value: string) => {
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { prospect_owner: value } });
+      toast.success('Owner updated');
+    } catch {
+      toast.error('Failed to update owner');
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <User className="h-4 w-4 mt-2.5 text-muted-foreground shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1">Prospect Owner</p>
+        <Select value={deal.prospect_owner || ''} onValueChange={handleChange}>
+          <SelectTrigger className="h-8 text-sm bg-secondary/40 border-border/40">
+            <SelectValue placeholder="Select owner…" />
+          </SelectTrigger>
+          <SelectContent>
+            {owners.map((o) => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
   return (
     <ScrollArea className="h-full">
@@ -54,7 +90,16 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
         <Field icon={Building2} label="Company" value={deal.company} />
-        <Field label="Vertical" value={deal.company_vertical} />
+        <Field label="Vertical" value={
+          deal.company_vertical ? (() => {
+            const vc = getVerticalColors(deal.company_vertical);
+            return (
+              <Badge variant="outline" className={`text-[11px] font-medium ${vc.bg} ${vc.text} ${vc.border}`}>
+                {deal.company_vertical}
+              </Badge>
+            );
+          })() : null
+        } />
         <Field label="Size" value={deal.company_size} />
 
         <Separator className="my-3 bg-border/30" />
@@ -63,7 +108,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Field label="Actual ACV" value={deal.actual_acv ? fmtCurrency(deal.actual_acv) : null} />
         <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
         <Field label="Closed Date" value={fmtDate(deal.closed_date)} />
-        <Field label="Prospect Owner" value={deal.prospect_owner} />
+        <OwnerSelect deal={deal} uploadId={uploadId} />
 
         {deal.next_steps && (
           <>
@@ -155,7 +200,7 @@ function NotesTab({ dealId }: { dealId: string }) {
   );
 }
 
-export function DealDetailPanel({ deal, open, onClose }: Props) {
+export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
 
   if (!deal) return null;
@@ -168,9 +213,14 @@ export function DealDetailPanel({ deal, open, onClose }: Props) {
           <SheetTitle className="text-lg font-bold text-foreground">{deal.company || name}</SheetTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="text-xs">{deal.status}</Badge>
-            {deal.company_vertical && (
-              <Badge variant="outline" className="text-[11px] font-normal">{deal.company_vertical}</Badge>
-            )}
+            {deal.company_vertical && (() => {
+              const vc = getVerticalColors(deal.company_vertical);
+              return (
+                <Badge variant="outline" className={`text-[11px] font-medium ${vc.bg} ${vc.text} ${vc.border}`}>
+                  {deal.company_vertical}
+                </Badge>
+              );
+            })()}
             {deal.company_size && (
               <Badge variant="outline" className="text-[11px] font-normal">{deal.company_size}</Badge>
             )}
@@ -192,7 +242,7 @@ export function DealDetailPanel({ deal, open, onClose }: Props) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
-            <DetailsTab deal={deal} />
+            <DetailsTab deal={deal} uploadId={uploadId} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
             <NotesTab dealId={deal.id} />

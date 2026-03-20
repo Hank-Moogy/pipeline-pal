@@ -82,3 +82,40 @@ export function useAddNote() {
     },
   });
 }
+
+export function useUpdateDeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ dealId, updates }: { dealId: string; updates: Record<string, unknown> }) => {
+      const { data, error } = await supabase
+        .from('deals')
+        .update(updates)
+        .eq('id', dealId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+    },
+  });
+}
+
+export function useDistinctOwners(uploadId: string | null) {
+  return useQuery({
+    queryKey: ['distinct_owners', uploadId],
+    queryFn: async () => {
+      if (!uploadId) return [];
+      const { data, error } = await supabase
+        .from('deals')
+        .select('prospect_owner')
+        .eq('upload_id', uploadId)
+        .not('prospect_owner', 'is', null);
+      if (error) throw error;
+      const unique = [...new Set((data || []).map((d) => d.prospect_owner).filter(Boolean))] as string[];
+      return unique.sort();
+    },
+    enabled: !!uploadId,
+  });
+}
