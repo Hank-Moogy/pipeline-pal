@@ -37,6 +37,7 @@ export default function Pipeline() {
   const { signOut } = useAuth();
   const { data: uploads = [] } = useUploads();
   const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     if (uploads.length > 0 && !selectedUploadId) {
