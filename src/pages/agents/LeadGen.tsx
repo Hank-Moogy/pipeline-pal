@@ -5,10 +5,62 @@ import { AgentLayout } from "@/components/agents/AgentLayout";
 import { LeadFilters, emptyFilters, type LeadFilterValues } from "@/components/agents/lead-gen/LeadFilters";
 import { LeadSearchCenter } from "@/components/agents/lead-gen/LeadSearchCenter";
 import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/components/agents/lead-gen/LeadResultsTable";
-import { UserSearch } from "lucide-react";
+import { UserSearch, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateMockLeads } from "@/lib/mock-leads";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: string, query: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+          <Bookmark className="h-3.5 w-3.5" />
+          Save as ICP
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="end">
+        <p className="text-xs font-medium mb-2 text-foreground">Name this ICP</p>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Enterprise CTOs in SaaS"
+          className="text-xs h-8 mb-2"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && name.trim()) {
+              onSave(name.trim(), query);
+              setName("");
+              setOpen(false);
+            }
+          }}
+        />
+        <div className="flex gap-2 justify-end">
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            disabled={!name.trim()}
+            onClick={() => {
+              onSave(name.trim(), query);
+              setName("");
+              setOpen(false);
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 interface SavedICP {
   id: string;
@@ -25,6 +77,7 @@ export default function LeadGen() {
   const [hasSearched, setHasSearched] = useState(false);
   const [savedICPs, setSavedICPs] = useState<SavedICP[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [lastQuery, setLastQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -64,6 +117,7 @@ export default function LeadGen() {
       setIsSearching(true);
       setHasSearched(true);
       setLeads([]);
+      setLastQuery(query);
 
       const newRecent = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 10);
       setRecentSearches(newRecent);
@@ -176,16 +230,18 @@ export default function LeadGen() {
             />
           ) : (
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between">
                 <button
                   onClick={() => {
                     setHasSearched(false);
                     setLeads([]);
+                    setLastQuery("");
                   }}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   ← New search
                 </button>
+                <SaveAsICPButton query={lastQuery} onSave={handleSaveICP} />
               </div>
 
               {isSearching && <SearchLoadingAnimation />}
