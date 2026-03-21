@@ -101,6 +101,59 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_interactions: {
+        Row: {
+          body: string | null
+          contact_email: string | null
+          created_at: string
+          deal_id: string
+          external_id: string | null
+          id: string
+          interaction_type: string
+          metadata: Json | null
+          occurred_at: string
+          source: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          contact_email?: string | null
+          created_at?: string
+          deal_id: string
+          external_id?: string | null
+          id?: string
+          interaction_type: string
+          metadata?: Json | null
+          occurred_at?: string
+          source?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          contact_email?: string | null
+          created_at?: string
+          deal_id?: string
+          external_id?: string | null
+          id?: string
+          interaction_type?: string
+          metadata?: Json | null
+          occurred_at?: string
+          source?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_interactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_notes: {
         Row: {
           author: string | null
@@ -254,6 +307,39 @@ export type Database = {
           id?: string
           name?: string
           steps?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gmail_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email?: string | null
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
