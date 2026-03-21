@@ -346,52 +346,100 @@ export type Database = {
       }
       lead_candidates: {
         Row: {
+          champions: Json | null
           company: string | null
           company_size: string | null
           contact_name: string | null
           created_at: string
           email: string | null
+          employee_count: string | null
           feedback: string | null
+          fit_reason: string | null
+          fit_score: number | null
+          funding_stage: string | null
           id: string
           job_title: string | null
+          last_enriched_at: string | null
           linkedin_url: string | null
+          location: string | null
+          pain_points: string[] | null
+          product_hooks: string[] | null
+          recent_signals: string[] | null
+          region: string | null
           rejection_reason: string | null
+          research_depth: string | null
           source: string | null
           status: string
+          studio_type: string | null
+          summary: string | null
+          tech_stack: string[] | null
           user_id: string
           vertical: string | null
+          website: string | null
         }
         Insert: {
+          champions?: Json | null
           company?: string | null
           company_size?: string | null
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          employee_count?: string | null
           feedback?: string | null
+          fit_reason?: string | null
+          fit_score?: number | null
+          funding_stage?: string | null
           id?: string
           job_title?: string | null
+          last_enriched_at?: string | null
           linkedin_url?: string | null
+          location?: string | null
+          pain_points?: string[] | null
+          product_hooks?: string[] | null
+          recent_signals?: string[] | null
+          region?: string | null
           rejection_reason?: string | null
+          research_depth?: string | null
           source?: string | null
           status?: string
+          studio_type?: string | null
+          summary?: string | null
+          tech_stack?: string[] | null
           user_id: string
           vertical?: string | null
+          website?: string | null
         }
         Update: {
+          champions?: Json | null
           company?: string | null
           company_size?: string | null
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          employee_count?: string | null
           feedback?: string | null
+          fit_reason?: string | null
+          fit_score?: number | null
+          funding_stage?: string | null
           id?: string
           job_title?: string | null
+          last_enriched_at?: string | null
           linkedin_url?: string | null
+          location?: string | null
+          pain_points?: string[] | null
+          product_hooks?: string[] | null
+          recent_signals?: string[] | null
+          region?: string | null
           rejection_reason?: string | null
+          research_depth?: string | null
           source?: string | null
           status?: string
+          studio_type?: string | null
+          summary?: string | null
+          tech_stack?: string[] | null
           user_id?: string
           vertical?: string | null
+          website?: string | null
         }
         Relationships: []
       }
