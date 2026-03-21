@@ -379,7 +379,21 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
 }
 
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
+  const navigate = useNavigate();
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
+  const { data: emails = [] } = useQuery({
+    queryKey: ['outreach-emails-count', deal?.id],
+    queryFn: async () => {
+      if (!deal) return [];
+      const { data, error } = await supabase
+        .from('outreach_emails')
+        .select('id')
+        .eq('deal_id', deal.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deal,
+  });
 
   if (!deal) return null;
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
@@ -387,7 +401,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-full sm:max-w-lg p-0 bg-background border-border/40 flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-3 shrink-0">
+        <SheetHeader className="px-6 pt-6 pb-3 shrink-0 space-y-3">
           <SheetTitle className="text-lg font-bold text-foreground">{deal.company || name}</SheetTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="text-xs">{deal.status}</Badge>
@@ -403,6 +417,14 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Badge variant="outline" className="text-[11px] font-normal">{deal.company_size}</Badge>
             )}
           </div>
+          <Button
+            size="sm"
+            className="w-full gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
+            onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Generate Outreach with AI
+          </Button>
         </SheetHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 pb-6">
@@ -418,12 +440,22 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
                 <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{notes.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="touchpoints" className="flex-1 gap-1.5 text-xs">
+              <Zap className="h-3.5 w-3.5" />
+              Touchpoints
+              {emails.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{emails.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} uploadId={uploadId} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <NotesTab dealId={deal.id} />
+          </TabsContent>
+          <TabsContent value="touchpoints" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <TouchpointsTab dealId={deal.id} />
           </TabsContent>
         </Tabs>
       </SheetContent>
