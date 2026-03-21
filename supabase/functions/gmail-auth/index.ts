@@ -37,6 +37,9 @@ serve(async (req) => {
     const state = JSON.stringify({ userId: user.id, redirectUrl });
     const stateEncoded = btoa(state);
 
+    const userEmail = user.email;
+    const domain = userEmail?.split('@')[1];
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: callbackUrl,
@@ -45,6 +48,8 @@ serve(async (req) => {
       access_type: "offline",
       prompt: "consent",
       state: stateEncoded,
+      ...(userEmail && { login_hint: userEmail }),
+      ...(domain && { hd: domain }),
     });
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
