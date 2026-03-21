@@ -181,16 +181,18 @@ export default function LeadGen() {
             />
           ) : (
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between">
                 <button
                   onClick={() => {
                     setHasSearched(false);
                     setLeads([]);
+                    setLastQuery("");
                   }}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   ← New search
                 </button>
+                <SaveAsICPButton query={lastQuery} onSave={handleSaveICP} />
               </div>
 
               {isSearching && <SearchLoadingAnimation />}
