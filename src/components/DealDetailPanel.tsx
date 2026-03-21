@@ -310,6 +310,74 @@ function NotesTab({ dealId }: { dealId: string }) {
   );
 }
 
+function TouchpointsTab({ dealId }: { dealId: string }) {
+  const { data: emails = [], isLoading } = useQuery({
+    queryKey: ['outreach-emails', dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('outreach_emails')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex flex-col h-full">
+      <ScrollArea className="flex-1">
+        <div className="space-y-3 pb-4 pr-1">
+          {isLoading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!isLoading && emails.length === 0 && (
+            <div className="text-center py-10 space-y-3">
+              <Mail className="h-8 w-8 mx-auto text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground/60">No touchpoints yet</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => navigate(`/agents/crm?dealId=${dealId}`)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate with AI
+              </Button>
+            </div>
+          )}
+          {!isLoading && emails.map((email) => (
+            <div key={email.id} className="rounded-lg border border-border/30 bg-secondary/30 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold truncate flex-1">{email.subject || 'No subject'}</p>
+                <Badge
+                  variant={email.status === 'sent' ? 'default' : 'outline'}
+                  className="text-[10px] shrink-0"
+                >
+                  {email.status}
+                </Badge>
+              </div>
+              {email.recipient_name && (
+                <p className="text-[11px] text-muted-foreground">
+                  To: {email.recipient_name} {email.recipient_email ? `<${email.recipient_email}>` : ''}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground line-clamp-3 whitespace-pre-wrap">{email.body}</p>
+              <p className="text-[10px] text-muted-foreground/50">
+                {formatDistanceToNow(new Date(email.created_at), { addSuffix: true })}
+              </p>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
 
