@@ -68,6 +68,7 @@ export default function LeadGen() {
       setIsSearching(true);
       setHasSearched(true);
       setLeads([]);
+      setLastQuery(query);
 
       const newRecent = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 10);
       setRecentSearches(newRecent);
