@@ -1,21 +1,23 @@
 
 
-# Fix: gmail-auth edge function using wrong env var
+# Add `login_hint` and `hd` to Gmail OAuth URL
 
-## Problem
-The `gmail-auth` edge function creates a Supabase client with `SUPABASE_PUBLISHABLE_KEY`, but in the edge function runtime the correct environment variable is `SUPABASE_ANON_KEY`. This causes the "supabaseKey is required" error.
+## Change
 
-## Fix
-**File: `supabase/functions/gmail-auth/index.ts`** (line ~22)
+**File: `supabase/functions/gmail-auth/index.ts`**
 
-Change:
+After getting the authenticated user, extract their email and domain, then add `login_hint` and `hd` parameters to the Google OAuth URL. This dynamically works for any `@mago.studio` user (or any org domain).
+
 ```typescript
-Deno.env.get("SUPABASE_PUBLISHABLE_KEY")
-```
-To:
-```typescript
-Deno.env.get("SUPABASE_ANON_KEY")
+const userEmail = user.email;
+const domain = userEmail?.split('@')[1];
+
+const params = new URLSearchParams({
+  // ...existing params...
+  ...(userEmail && { login_hint: userEmail }),
+  ...(domain && { hd: domain }),
+});
 ```
 
-Single line change, no other modifications needed.
+Single file, ~3 lines added.
 
