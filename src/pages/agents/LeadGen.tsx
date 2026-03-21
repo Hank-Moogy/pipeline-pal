@@ -8,8 +8,7 @@ import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/com
 import { UserSearch } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { ToolCall } from "@/lib/agent-stream";
-import { streamAgentChat } from "@/lib/agent-stream";
+import { generateMockLeads } from "@/lib/mock-leads";
 
 interface SavedICP {
   id: string;
@@ -27,7 +26,6 @@ export default function LeadGen() {
   const [savedICPs, setSavedICPs] = useState<SavedICP[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Load saved ICPs from agent_settings
   useEffect(() => {
     if (!user) return;
     supabase
@@ -60,18 +58,6 @@ export default function LeadGen() {
     [user]
   );
 
-  const buildContextFromFilters = (query: string): string => {
-    const parts = [query];
-    if (filters.jobTitles.length) parts.push(`Job titles: ${filters.jobTitles.join(", ")}`);
-    if (filters.locations.length) parts.push(`Locations: ${filters.locations.join(", ")}`);
-    if (filters.industries.length) parts.push(`Industries: ${filters.industries.join(", ")}`);
-    if (filters.companySizeMin || filters.companySizeMax)
-      parts.push(`Company size: ${filters.companySizeMin || "any"} – ${filters.companySizeMax || "any"}`);
-    if (filters.revenueMin || filters.revenueMax)
-      parts.push(`Revenue: ${filters.revenueMin || "any"} – ${filters.revenueMax || "any"}`);
-    return parts.join("\n");
-  };
-
   const handleSearch = useCallback(
     async (query: string) => {
       if (!user) return;
@@ -79,52 +65,17 @@ export default function LeadGen() {
       setHasSearched(true);
       setLeads([]);
 
-      // Update recent searches
       const newRecent = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 10);
       setRecentSearches(newRecent);
       persistSettings(savedICPs, newRecent);
 
-      const fullQuery = buildContextFromFilters(query);
-
-      try {
-        await streamAgentChat({
-          agentType: "lead-gen",
-          messages: [
-            {
-              role: "user",
-              content: `Find leads matching this criteria:\n${fullQuery}\n\nPlease use the suggest_leads tool to return structured results.`,
-            },
-          ],
-          onDelta: () => {},
-          onToolCall: (tc: ToolCall) => {
-            if (tc.name === "suggest_leads" && tc.arguments.leads) {
-              const newLeads = (tc.arguments.leads as any[]).map((lead, i) => ({
-                id: `lead-${Date.now()}-${i}`,
-                company: lead.company || "",
-                contact_name: lead.contact_name || "Unknown",
-                job_title: lead.job_title || "",
-                email: lead.email || "",
-                linkedin_url: lead.linkedin_url || "",
-                company_size: lead.company_size || "",
-                vertical: lead.vertical || "",
-                source: lead.source || "ai-agent",
-                status: "pending" as const,
-              }));
-              setLeads((prev) => [...prev, ...newLeads]);
-            }
-          },
-          onDone: () => setIsSearching(false),
-          onError: (err) => {
-            toast.error(err);
-            setIsSearching(false);
-          },
-        });
-      } catch {
-        toast.error("Search failed");
+      // Mock: simulate a 2-second search delay then reveal results
+      setTimeout(() => {
+        setLeads(generateMockLeads());
         setIsSearching(false);
-      }
+      }, 2200);
     },
-    [user, filters, recentSearches, savedICPs, persistSettings]
+    [user, recentSearches, savedICPs, persistSettings]
   );
 
   const handleSaveICP = useCallback(
@@ -166,10 +117,41 @@ export default function LeadGen() {
     [leads, user]
   );
 
-  const handleReject = useCallback((id: string) => {
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "rejected" } : l)));
-    toast.info("Lead rejected");
+  const handleReject = useCallback((id: string, reason?: string) => {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "rejected", rejectionReason: reason } : l)));
+    toast.info(reason ? `Lead rejected: ${reason}` : "Lead rejected");
   }, []);
+
+  const handleBulkAddToPipe = useCallback(
+    async (ids: string[]) => {
+      if (!user) return;
+      const toApprove = leads.filter((l) => ids.includes(l.id) && l.status === "pending");
+      
+      const inserts = toApprove.map((lead) => ({
+        user_id: user.id,
+        company: lead.company,
+        contact_name: lead.contact_name,
+        email: lead.email,
+        linkedin_url: lead.linkedin_url,
+        job_title: lead.job_title,
+        company_size: lead.company_size,
+        vertical: lead.vertical,
+        source: lead.source,
+        status: "approved",
+      }));
+
+      const { error } = await supabase.from("lead_candidates").insert(inserts);
+      if (error) {
+        toast.error("Failed to add leads to pipe");
+      } else {
+        setLeads((prev) =>
+          prev.map((l) => (ids.includes(l.id) && l.status === "pending" ? { ...l, status: "approved" } : l))
+        );
+        toast.success(`${toApprove.length} lead${toApprove.length !== 1 ? "s" : ""} added to pipe`);
+      }
+    },
+    [leads, user]
+  );
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -177,12 +159,10 @@ export default function LeadGen() {
   return (
     <AgentLayout title="Lead Gen Agent" icon={<UserSearch className="h-5 w-5 text-primary" />}>
       <div className="flex-1 flex min-h-0">
-        {/* Left: Filters sidebar */}
         <div className="w-[260px] shrink-0 border-r border-border/40 bg-card/50 overflow-y-auto hidden lg:block">
           <LeadFilters filters={filters} onChange={setFilters} />
         </div>
 
-        {/* Center: Search + Results */}
         <div className="flex-1 min-w-0 overflow-y-auto">
           {!hasSearched ? (
             <LeadSearchCenter
@@ -196,7 +176,6 @@ export default function LeadGen() {
             />
           ) : (
             <div className="p-6 space-y-4">
-              {/* Compact search bar when results are shown */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -207,13 +186,15 @@ export default function LeadGen() {
                 >
                   ← New search
                 </button>
-                <span className="text-xs text-muted-foreground">
-                  {leads.length} result{leads.length !== 1 ? "s" : ""} found
-                </span>
               </div>
 
               {isSearching && <SearchLoadingAnimation />}
-              <LeadResultsTable leads={leads} onApprove={handleApprove} onReject={handleReject} />
+              <LeadResultsTable
+                leads={leads}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onBulkAddToPipe={handleBulkAddToPipe}
+              />
             </div>
           )}
         </div>
