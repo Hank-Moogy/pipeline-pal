@@ -204,11 +204,11 @@ export default function LeadGen() {
         });
         if (error) throw error;
 
-        const enrichedMap = new Map((data?.enriched || []).map((e: any) => [e.id, e]));
+        const enrichedMap = new Map((data?.enriched || []).map((e: any) => [e.id, e as Record<string, unknown>]));
         setLeads((prev) =>
           prev.map((l) => {
-            const e = enrichedMap.get(l.id);
-            return e ? { ...l, ...e, research_depth: "enriched", last_enriched_at: new Date().toISOString() } : l;
+            const e = enrichedMap.get(l.id) as Record<string, unknown> | undefined;
+            return e ? { ...l, ...e, research_depth: "enriched" as const, last_enriched_at: new Date().toISOString() } : l;
           })
         );
         toast.success(`${data?.total || 0} leads enriched`);
