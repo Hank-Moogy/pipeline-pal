@@ -28,6 +28,7 @@ export default function LeadGen() {
   const [hasSearched, setHasSearched] = useState(false);
   const [savedICPs, setSavedICPs] = useState<SavedICP[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [lastQuery, setLastQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
