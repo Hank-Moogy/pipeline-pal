@@ -13,6 +13,55 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: string, query: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+          <Bookmark className="h-3.5 w-3.5" />
+          Save as ICP
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="end">
+        <p className="text-xs font-medium mb-2 text-foreground">Name this ICP</p>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Enterprise CTOs in SaaS"
+          className="text-xs h-8 mb-2"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && name.trim()) {
+              onSave(name.trim(), query);
+              setName("");
+              setOpen(false);
+            }
+          }}
+        />
+        <div className="flex gap-2 justify-end">
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            disabled={!name.trim()}
+            onClick={() => {
+              onSave(name.trim(), query);
+              setName("");
+              setOpen(false);
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface SavedICP {
   id: string;
   name: string;
