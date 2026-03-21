@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AgentLayout } from "@/components/agents/AgentLayout";
@@ -8,7 +8,6 @@ import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/com
 import { UserSearch, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generateMockLeads } from "@/lib/mock-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -41,21 +40,8 @@ function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: stri
           }}
         />
         <div className="flex gap-2 justify-end">
-          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-xs"
-            disabled={!name.trim()}
-            onClick={() => {
-              onSave(name.trim(), query);
-              setName("");
-              setOpen(false);
-            }}
-          >
-            Save
-          </Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button size="sm" className="h-7 text-xs" disabled={!name.trim()} onClick={() => { onSave(name.trim(), query); setName(""); setOpen(false); }}>Save</Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -78,6 +64,8 @@ export default function LeadGen() {
   const [savedICPs, setSavedICPs] = useState<SavedICP[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [lastQuery, setLastQuery] = useState("");
+  const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
+  const [generatingOutreachId, setGeneratingOutreachId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!user) return;
@@ -100,11 +88,7 @@ export default function LeadGen() {
     async (icps: SavedICP[], recent: string[]) => {
       if (!user) return;
       await supabase.from("agent_settings").upsert(
-        {
-          user_id: user.id,
-          agent_type: "lead-gen-icps",
-          settings: { icps, recent } as any,
-        },
+        { user_id: user.id, agent_type: "lead-gen-icps", settings: { icps, recent } as any },
         { onConflict: "user_id,agent_type" }
       );
     },
@@ -123,11 +107,50 @@ export default function LeadGen() {
       setRecentSearches(newRecent);
       persistSettings(savedICPs, newRecent);
 
-      // Mock: simulate a 2-second search delay then reveal results
-      setTimeout(() => {
-        setLeads(generateMockLeads());
+      try {
+        const { data, error } = await supabase.functions.invoke("discover-leads", {
+          body: { query },
+        });
+
+        if (error) throw error;
+
+        const rawLeads = (data?.leads || []).map((l: any) => ({
+          id: l.id,
+          company: l.company || "",
+          contact_name: l.contact_name || "",
+          job_title: l.job_title || "",
+          email: l.email || "",
+          linkedin_url: l.linkedin_url || "",
+          company_size: l.company_size || "",
+          vertical: l.vertical || "",
+          location: l.location || "",
+          source: l.source || "",
+          status: l.status || "pending",
+          summary: l.summary,
+          fit_score: l.fit_score,
+          fit_reason: l.fit_reason,
+          pain_points: l.pain_points,
+          tech_stack: l.tech_stack,
+          product_hooks: l.product_hooks,
+          champions: l.champions,
+          recent_signals: l.recent_signals,
+          research_depth: l.research_depth,
+          last_enriched_at: l.last_enriched_at,
+          studio_type: l.studio_type,
+          website: l.website,
+          region: l.region,
+          employee_count: l.employee_count,
+          funding_stage: l.funding_stage,
+        })) as LeadResult[];
+
+        setLeads(rawLeads);
+        toast.success(`${data?.inserted || 0} new leads discovered`);
+      } catch (e: any) {
+        console.error("Search error:", e);
+        toast.error(e.message || "Search failed");
+      } finally {
         setIsSearching(false);
-      }, 2200);
+      }
     },
     [user, recentSearches, savedICPs, persistSettings]
   );
@@ -143,26 +166,89 @@ export default function LeadGen() {
     [savedICPs, recentSearches, persistSettings]
   );
 
+  const handleEnrich = useCallback(
+    async (id: string) => {
+      setEnrichingIds((prev) => new Set(prev).add(id));
+      try {
+        const { data, error } = await supabase.functions.invoke("enrich-lead", {
+          body: { leadId: id },
+        });
+        if (error) throw error;
+
+        const enrichment = data?.enriched?.[0];
+        if (enrichment) {
+          setLeads((prev) =>
+            prev.map((l) =>
+              l.id === id
+                ? { ...l, ...enrichment, research_depth: "enriched", last_enriched_at: new Date().toISOString() }
+                : l
+            )
+          );
+          toast.success("Lead enriched");
+        }
+      } catch (e: any) {
+        toast.error(e.message || "Enrichment failed");
+      } finally {
+        setEnrichingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      }
+    },
+    []
+  );
+
+  const handleBulkEnrich = useCallback(
+    async (ids: string[]) => {
+      setEnrichingIds(new Set(ids));
+      try {
+        const { data, error } = await supabase.functions.invoke("enrich-lead", {
+          body: { leadIds: ids },
+        });
+        if (error) throw error;
+
+        const enrichedMap = new Map((data?.enriched || []).map((e: any) => [e.id, e]));
+        setLeads((prev) =>
+          prev.map((l) => {
+            const e = enrichedMap.get(l.id);
+            return e ? { ...l, ...e, research_depth: "enriched", last_enriched_at: new Date().toISOString() } : l;
+          })
+        );
+        toast.success(`${data?.total || 0} leads enriched`);
+      } catch (e: any) {
+        toast.error(e.message || "Bulk enrichment failed");
+      } finally {
+        setEnrichingIds(new Set());
+      }
+    },
+    []
+  );
+
+  const handleGenerateOutreach = useCallback(
+    async (id: string) => {
+      setGeneratingOutreachId(id);
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-outreach", {
+          body: { leadId: id },
+        });
+        if (error) throw error;
+
+        toast.success("Outreach email drafted", { description: data?.email?.subject });
+      } catch (e: any) {
+        toast.error(e.message || "Outreach generation failed");
+      } finally {
+        setGeneratingOutreachId(undefined);
+      }
+    },
+    []
+  );
+
   const handleApprove = useCallback(
     async (id: string) => {
       const lead = leads.find((l) => l.id === id);
       if (!lead || !user) return;
 
-      const { error } = await supabase.from("lead_candidates").insert({
-        user_id: user.id,
-        company: lead.company,
-        contact_name: lead.contact_name,
-        email: lead.email,
-        linkedin_url: lead.linkedin_url,
-        job_title: lead.job_title,
-        company_size: lead.company_size,
-        vertical: lead.vertical,
-        source: lead.source,
-        status: "approved",
-      });
+      const { error } = await supabase.from("lead_candidates").update({ status: "approved" }).eq("id", id);
 
       if (error) {
-        toast.error("Failed to save lead");
+        toast.error("Failed to approve lead");
       } else {
         setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "approved" } : l)));
         toast.success("Lead approved");
@@ -179,33 +265,32 @@ export default function LeadGen() {
   const handleBulkAddToPipe = useCallback(
     async (ids: string[]) => {
       if (!user) return;
-      const toApprove = leads.filter((l) => ids.includes(l.id) && l.status === "pending");
-      
-      const inserts = toApprove.map((lead) => ({
-        user_id: user.id,
-        company: lead.company,
-        contact_name: lead.contact_name,
-        email: lead.email,
-        linkedin_url: lead.linkedin_url,
-        job_title: lead.job_title,
-        company_size: lead.company_size,
-        vertical: lead.vertical,
-        source: lead.source,
-        status: "approved",
-      }));
+      const { error } = await supabase
+        .from("lead_candidates")
+        .update({ status: "approved" })
+        .in("id", ids);
 
-      const { error } = await supabase.from("lead_candidates").insert(inserts);
       if (error) {
         toast.error("Failed to add leads to pipe");
       } else {
         setLeads((prev) =>
           prev.map((l) => (ids.includes(l.id) && l.status === "pending" ? { ...l, status: "approved" } : l))
         );
-        toast.success(`${toApprove.length} lead${toApprove.length !== 1 ? "s" : ""} added to pipe`);
+        toast.success(`${ids.length} lead${ids.length !== 1 ? "s" : ""} added to pipe`);
       }
     },
-    [leads, user]
+    [user]
   );
+
+  // Apply client-side filters
+  const filteredLeads = useMemo(() => {
+    return leads.filter((l) => {
+      if (filters.studioType && filters.studioType !== "all" && l.studio_type && l.studio_type !== filters.studioType) return false;
+      if (filters.fitScoreMin > 0 && (l.fit_score || 0) < filters.fitScoreMin) return false;
+      if (filters.region && filters.region !== "all" && l.region && !l.region.toLowerCase().includes(filters.region.toLowerCase())) return false;
+      return true;
+    });
+  }, [leads, filters]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -232,11 +317,7 @@ export default function LeadGen() {
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <button
-                  onClick={() => {
-                    setHasSearched(false);
-                    setLeads([]);
-                    setLastQuery("");
-                  }}
+                  onClick={() => { setHasSearched(false); setLeads([]); setLastQuery(""); }}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   ← New search
@@ -246,10 +327,15 @@ export default function LeadGen() {
 
               {isSearching && <SearchLoadingAnimation />}
               <LeadResultsTable
-                leads={leads}
+                leads={filteredLeads}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onBulkAddToPipe={handleBulkAddToPipe}
+                onEnrich={handleEnrich}
+                onBulkEnrich={handleBulkEnrich}
+                onGenerateOutreach={handleGenerateOutreach}
+                enrichingIds={enrichingIds}
+                generatingOutreachId={generatingOutreachId}
               />
             </div>
           )}
