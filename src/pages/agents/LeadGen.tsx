@@ -240,21 +240,61 @@ export default function LeadGen() {
     []
   );
 
+  const getOrCreateLeadGenUpload = useCallback(async () => {
+    if (!user) return null;
+    const weekLabel = "Lead Gen";
+    const { data: existing } = await supabase
+      .from("uploads")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("week_label", weekLabel)
+      .maybeSingle();
+    if (existing) return existing.id;
+    const { data: created, error } = await supabase
+      .from("uploads")
+      .insert({ user_id: user.id, week_label: weekLabel, file_name: "lead-gen-agent" })
+      .select("id")
+      .single();
+    if (error) { console.error("Failed to create Lead Gen upload", error); return null; }
+    return created.id;
+  }, [user]);
+
+  const insertDealFromLead = useCallback(async (lead: LeadResult, uploadId: string) => {
+    const nameParts = (lead.contact_name || "").split(" ");
+    await supabase.from("deals").insert({
+      upload_id: uploadId,
+      status: "Lead",
+      first_name: nameParts[0] || null,
+      last_name: nameParts.slice(1).join(" ") || null,
+      company: lead.company || null,
+      email: lead.email || null,
+      linkedin_url: lead.linkedin_url || null,
+      job_title: lead.job_title || null,
+      company_size: lead.company_size || null,
+      company_vertical: lead.vertical || null,
+      country: lead.location || null,
+      description: lead.summary || null,
+    });
+  }, []);
+
   const handleApprove = useCallback(
     async (id: string) => {
       const lead = leads.find((l) => l.id === id);
       if (!lead || !user) return;
 
-      const { error } = await supabase.from("lead_candidates").update({ status: "approved" }).eq("id", id);
+      const uploadId = await getOrCreateLeadGenUpload();
+      if (!uploadId) { toast.error("Failed to create pipeline entry"); return; }
 
+      const { error } = await supabase.from("lead_candidates").update({ status: "approved" }).eq("id", id);
       if (error) {
         toast.error("Failed to approve lead");
       } else {
+        await insertDealFromLead(lead, uploadId);
         setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "approved" } : l)));
-        toast.success("Lead approved");
+        toast.success("Lead approved → added to Pipeline");
       }
     },
-    [leads, user]
+    [leads, user, getOrCreateLeadGenUpload, insertDealFromLead]
   );
 
   const handleReject = useCallback((id: string, reason?: string) => {
@@ -265,6 +305,9 @@ export default function LeadGen() {
   const handleBulkAddToPipe = useCallback(
     async (ids: string[]) => {
       if (!user) return;
+      const uploadId = await getOrCreateLeadGenUpload();
+      if (!uploadId) { toast.error("Failed to create pipeline entries"); return; }
+
       const { error } = await supabase
         .from("lead_candidates")
         .update({ status: "approved" })
@@ -273,13 +316,15 @@ export default function LeadGen() {
       if (error) {
         toast.error("Failed to add leads to pipe");
       } else {
+        const pendingLeads = leads.filter((l) => ids.includes(l.id) && l.status === "pending");
+        await Promise.all(pendingLeads.map((l) => insertDealFromLead(l, uploadId)));
         setLeads((prev) =>
           prev.map((l) => (ids.includes(l.id) && l.status === "pending" ? { ...l, status: "approved" } : l))
         );
-        toast.success(`${ids.length} lead${ids.length !== 1 ? "s" : ""} added to pipe`);
+        toast.success(`${pendingLeads.length} lead${pendingLeads.length !== 1 ? "s" : ""} added to Pipeline`);
       }
     },
-    [user]
+    [user, leads, getOrCreateLeadGenUpload, insertDealFromLead]
   );
 
   // Apply client-side filters
