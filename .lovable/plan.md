@@ -1,99 +1,49 @@
 
 
-# Agents Hub — Implementation Plan
+# Gmail Integration + Unified Touchpoints Timeline
 
-This is a large feature set. I'll break it into manageable implementation chunks, starting with the database foundation and working up to the UI.
+## Sync Strategy
+- **On deal open**: auto-sync emails for that deal's contact email (~1-2s)
+- **On app load**: background sync for all connected users' deals
+- **Manual "Sync" button**: per-deal on-demand refresh
+- Access tokens auto-refresh using the refresh token (tokens expire hourly, refresh is seamless)
 
-## Phase 1: Database Migrations
+## Implementation Steps
 
-Create all 8 tables + enable pgvector in a single migration:
+### 1. Store Secrets
+Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as edge function secrets.
 
-1. **Enable pgvector** — `CREATE EXTENSION IF NOT EXISTS vector`
-2. **`agent_memories`** — id, user_id, agent_type, memory_type, content, embedding (vector(768)), metadata (jsonb), created_at + IVFFlat index
-3. **`agent_conversations`** — id, user_id, agent_type, role, content, metadata (jsonb), created_at
-4. **`lead_candidates`** — id, user_id, company, contact_name, email, linkedin_url, job_title, company_size, vertical, source, status (default 'pending'), rejection_reason, feedback, created_at
-5. **`agent_settings`** — id, user_id, agent_type, settings (jsonb), updated_at
-6. **`pipeline_actions`** — id, user_id, deal_id (FK deals nullable), action_type, summary, priority, status (default 'pending'), created_at
-7. **`outreach_emails`** — id, user_id, deal_id (nullable), recipient_email, recipient_name, subject, body, status (default 'draft'), sequence_id (nullable), sequence_step, created_at, sent_at
-8. **`email_sequences`** — id, user_id, name, steps (jsonb), created_at
-9. **`social_content`** — id, user_id, platform (default 'linkedin'), post_text, image_url, status (default 'draft'), variant_group, created_at
+### 2. Database Migration
+**`gmail_tokens`** — `id`, `user_id` (unique), `access_token`, `refresh_token`, `expires_at`, `email`, `created_at`, `updated_at`. RLS: `user_id = auth.uid()`.
 
-All tables get RLS: `auth.uid() = user_id` for SELECT, INSERT, UPDATE, DELETE.
+**`deal_interactions`** — `id`, `deal_id` (FK deals), `user_id`, `interaction_type` (email_sent/email_received/call/meeting/note/linkedin), `subject`, `body`, `contact_email`, `occurred_at`, `source` (manual/gmail_sync/ai_generated), `external_id` (unique per user for dedup), `metadata` (jsonb), `created_at`. RLS: `user_id = auth.uid()`.
 
-Create `match_agent_memories` database function for similarity search.
+### 3. Edge Functions
 
-## Phase 2: Edge Functions
+**`gmail-auth`** — Returns Google OAuth URL with `gmail.readonly` scope, `access_type=offline`, `prompt=consent`. Uses `GOOGLE_CLIENT_ID`.
 
-### `agent-embed` 
-- Thin wrapper calling Lovable AI gateway to generate embeddings
-- Accepts text, returns vector(768)
+**`gmail-callback`** — Exchanges auth code for tokens, stores in `gmail_tokens`, redirects back to app.
 
-### `agent-chat`
-- Receives `{ agentType, messages, context }`
-- Loads relevant memories via `match_agent_memories`
-- Builds agent-specific system prompt with memory context
-- Streams response via Lovable AI gateway (`google/gemini-3-flash-preview`)
-- Post-response: extracts facts/preferences and stores as new memories
-- Handles 429/402 errors properly
+**`sync-gmail`** — Accepts `dealId`. Reads user's token, refreshes if expired (using refresh token + Google's token endpoint), queries Gmail API with `from:{email} OR to:{email}`, inserts new `deal_interactions` deduped by `external_id`.
 
-## Phase 3: Shared UI Components
+### 4. Frontend
 
-### `AgentChat` — Reusable streaming chat panel
-- Message list with markdown rendering
-- Input with send button
-- Streams from `agent-chat` edge function
-- Persists messages to `agent_conversations`
+**`useGmailConnection` hook** — checks `gmail_tokens` for current user, provides `isConnected`, `connectGmail()`, `syncDealEmails(dealId)`.
 
-### `AgentLayout` — Page wrapper
-- Back-to-hub navigation, agent name/icon header
-- Memory indicator showing stored memory count
+**App-load sync** — trigger background sync for user's deals when gmail is connected.
 
-### `ActionQueue` — Reusable approve/reject/feedback table
-- Used by Lead Gen, CRM, and Social agents
-- Feedback on rejection stores to `agent_memories`
+**Deal-open sync** — auto-call `syncDealEmails(dealId)` when Touchpoints tab is opened.
 
-## Phase 4: Routing & Navigation
+**TouchpointsTab redesign** — merge `deal_interactions` + `outreach_emails` into chronological timeline. Show "Connect Gmail" button (if not connected), "Sync" button + last-synced timestamp (if connected), and "Log Interaction" form (type, subject, body, date).
 
-- Add routes: `/agents`, `/agents/lead-gen`, `/agents/pipeline`, `/agents/crm`, `/agents/social`
-- Add "Agents" nav link to Pipeline and Dashboard headers (alongside existing Dashboard/Pipeline links)
+### 5. Files to Create/Modify
 
-## Phase 5: Agent Hub Page (`/agents`)
-
-- 4 cards with icon, title, description, and "Open" button
-- Links to each agent sub-page
-
-## Phase 6: Lead Gen Agent
-
-- Split layout: chat (left) + results table (right)
-- ICP Settings drawer saved to `agent_settings`
-- Results table from `lead_candidates` with approve/reject + feedback
-- Approved leads can be pushed to `deals`
-
-## Phase 7: Pipeline Manager Agent
-
-- Chat with auto-injected pipeline context (deal counts, stale deals, totals)
-- Action queue from `pipeline_actions`
-- "Generate Report" button for markdown summaries
-
-## Phase 8: CRM Agent + Deal Panel Integration
-
-- Supports `?dealId=xxx` query param to pre-load deal context
-- Email queue table from `outreach_emails`
-- Sequence builder using `email_sequences`
-- Add "Generate Outreach" button to `DealDetailPanel` Details tab → navigates to `/agents/crm?dealId={id}`
-
-## Phase 9: Social Media Agent
-
-- Chat for content ideation
-- Content queue from `social_content`
-- Mocked image generation (placeholder images)
-- Approve/reject workflow per content item
-
-## Technical Notes
-
-- All AI via Lovable AI gateway — `LOVABLE_API_KEY` already provisioned
-- Provider-agnostic architecture: `agent-chat` edge function structured with `getProviderConfig()` helper for future OpenAI/Anthropic swap
-- Memory extraction: secondary LLM call after each turn extracts facts as JSON → embeds → stores
-- Image generation mocked with placeholders
-- Email sending mocked (status changes only)
+| File | Action |
+|------|--------|
+| Migration SQL | Create `gmail_tokens` + `deal_interactions` |
+| `supabase/functions/gmail-auth/index.ts` | Create |
+| `supabase/functions/gmail-callback/index.ts` | Create |
+| `supabase/functions/sync-gmail/index.ts` | Create |
+| `src/hooks/useGmailConnection.ts` | Create |
+| `src/components/DealDetailPanel.tsx` | Modify Touchpoints tab |
 
