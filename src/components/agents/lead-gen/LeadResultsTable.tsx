@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, X, ExternalLink, Loader2, MessageSquare, Plus } from "lucide-react";
+import { Check, X, ExternalLink, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
