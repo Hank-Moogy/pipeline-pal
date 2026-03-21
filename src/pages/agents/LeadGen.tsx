@@ -5,10 +5,13 @@ import { AgentLayout } from "@/components/agents/AgentLayout";
 import { LeadFilters, emptyFilters, type LeadFilterValues } from "@/components/agents/lead-gen/LeadFilters";
 import { LeadSearchCenter } from "@/components/agents/lead-gen/LeadSearchCenter";
 import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/components/agents/lead-gen/LeadResultsTable";
-import { UserSearch } from "lucide-react";
+import { UserSearch, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateMockLeads } from "@/lib/mock-leads";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface SavedICP {
   id: string;
