@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -7,15 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap } from 'lucide-react';
+import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getVerticalColors } from '@/lib/vertical-colors';
+import { useGmailConnection } from '@/hooks/useGmailConnection';
+import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
 
 interface Props {
