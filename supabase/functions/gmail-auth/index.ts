@@ -46,7 +46,7 @@ serve(async (req) => {
       response_type: "code",
       scope: "https://www.googleapis.com/auth/gmail.readonly",
       access_type: "offline",
-      prompt: "consent",
+      prompt: "select_account consent",
       state: stateEncoded,
       ...(userEmail && { login_hint: userEmail }),
       ...(domain && { hd: domain }),
