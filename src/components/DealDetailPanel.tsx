@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -7,15 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap } from 'lucide-react';
+import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getVerticalColors } from '@/lib/vertical-colors';
+import { useGmailConnection } from '@/hooks/useGmailConnection';
+import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
 
 interface Props {
@@ -310,8 +313,50 @@ function NotesTab({ dealId }: { dealId: string }) {
   );
 }
 
+const interactionIcons: Record<string, React.ElementType> = {
+  email_sent: ArrowUpRight,
+  email_received: ArrowDownLeft,
+  call: PhoneCall,
+  meeting: Video,
+  note: StickyNote,
+  linkedin: Linkedin,
+};
+
+const interactionLabels: Record<string, string> = {
+  email_sent: 'Email Sent',
+  email_received: 'Email Received',
+  call: 'Call',
+  meeting: 'Meeting',
+  note: 'Note',
+  linkedin: 'LinkedIn',
+};
+
 function TouchpointsTab({ dealId }: { dealId: string }) {
-  const { data: emails = [], isLoading } = useQuery({
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { isConnected, isCheckingConnection, connectedEmail, isSyncing, connectGmail, syncDealEmails } = useGmailConnection();
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [logType, setLogType] = useState('note');
+  const [logSubject, setLogSubject] = useState('');
+  const [logBody, setLogBody] = useState('');
+  const [isLogging, setIsLogging] = useState(false);
+
+  // Fetch deal_interactions
+  const { data: interactions = [], isLoading: loadingInteractions } = useQuery({
+    queryKey: ['deal-interactions', dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('deal_interactions')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('occurred_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch outreach_emails
+  const { data: outreachEmails = [], isLoading: loadingOutreach } = useQuery({
     queryKey: ['outreach-emails', dealId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -324,10 +369,149 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
     },
   });
 
+  // Auto-sync on mount if connected
+  useEffect(() => {
+    if (isConnected && dealId) {
+      syncDealEmails(dealId);
+    }
+  }, [isConnected, dealId]);
+
+  // Merge into unified timeline
+  const timeline = [
+    ...interactions.map((i) => ({
+      id: i.id,
+      type: i.interaction_type,
+      subject: i.subject,
+      body: i.body,
+      date: i.occurred_at,
+      source: i.source,
+      contactEmail: i.contact_email,
+    })),
+    ...outreachEmails.map((e) => ({
+      id: e.id,
+      type: 'email_sent' as const,
+      subject: e.subject,
+      body: e.body,
+      date: e.sent_at || e.created_at,
+      source: 'outreach' as const,
+      contactEmail: e.recipient_email,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const isLoading = loadingInteractions || loadingOutreach;
+
+  const handleLogInteraction = async () => {
+    if (!user || !logBody.trim()) return;
+    setIsLogging(true);
+    try {
+      const { error } = await supabase.from('deal_interactions').insert({
+        deal_id: dealId,
+        user_id: user.id,
+        interaction_type: logType,
+        subject: logSubject.trim() || null,
+        body: logBody.trim(),
+        source: 'manual',
+        occurred_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      toast.success('Interaction logged');
+      setLogSubject('');
+      setLogBody('');
+      setShowLogForm(false);
+      queryClient.invalidateQueries({ queryKey: ['deal-interactions', dealId] });
+    } catch {
+      toast.error('Failed to log interaction');
+    } finally {
+      setIsLogging(false);
+    }
+  };
+
   const navigate = useNavigate();
 
   return (
     <div className="flex flex-col h-full">
+      {/* Gmail connection bar */}
+      <div className="shrink-0 mb-3 space-y-2">
+        {isCheckingConnection ? null : !isConnected ? (
+          <Button size="sm" variant="outline" className="w-full gap-2 text-xs" onClick={connectGmail}>
+            <Mail className="h-3.5 w-3.5" />
+            Connect Gmail to sync emails
+          </Button>
+        ) : (
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="truncate">Connected: {connectedEmail}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 gap-1 text-[11px]"
+              onClick={() => syncDealEmails(dealId)}
+              disabled={isSyncing}
+            >
+              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sync
+            </Button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5 text-xs"
+            onClick={() => setShowLogForm(!showLogForm)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Log Interaction
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs"
+            onClick={() => navigate(`/agents/crm?dealId=${dealId}`)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            AI Outreach
+          </Button>
+        </div>
+      </div>
+
+      {/* Log interaction form */}
+      {showLogForm && (
+        <div className="shrink-0 mb-3 rounded-lg border border-border/40 bg-secondary/30 p-3 space-y-2">
+          <Select value={logType} onValueChange={setLogType}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="note">Note</SelectItem>
+              <SelectItem value="call">Call</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="email_sent">Email Sent</SelectItem>
+              <SelectItem value="linkedin">LinkedIn</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Subject (optional)"
+            value={logSubject}
+            onChange={(e) => setLogSubject(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <Textarea
+            placeholder="Details…"
+            value={logBody}
+            onChange={(e) => setLogBody(e.target.value)}
+            className="min-h-[60px] resize-none text-xs"
+          />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowLogForm(false)}>Cancel</Button>
+            <Button size="sm" className="h-7 text-xs gap-1" onClick={handleLogInteraction} disabled={isLogging || !logBody.trim()}>
+              {isLogging && <Loader2 className="h-3 w-3 animate-spin" />}
+              Save
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Timeline */}
       <ScrollArea className="flex-1">
         <div className="space-y-3 pb-4 pr-1">
           {isLoading && (
@@ -335,43 +519,37 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!isLoading && emails.length === 0 && (
-            <div className="text-center py-10 space-y-3">
+          {!isLoading && timeline.length === 0 && (
+            <div className="text-center py-10 space-y-2">
               <Mail className="h-8 w-8 mx-auto text-muted-foreground/30" />
               <p className="text-xs text-muted-foreground/60">No touchpoints yet</p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 text-xs"
-                onClick={() => navigate(`/agents/crm?dealId=${dealId}`)}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Generate with AI
-              </Button>
             </div>
           )}
-          {!isLoading && emails.map((email) => (
-            <div key={email.id} className="rounded-lg border border-border/30 bg-secondary/30 p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold truncate flex-1">{email.subject || 'No subject'}</p>
-                <Badge
-                  variant={email.status === 'sent' ? 'default' : 'outline'}
-                  className="text-[10px] shrink-0"
-                >
-                  {email.status}
-                </Badge>
+          {!isLoading && timeline.map((item) => {
+            const Icon = interactionIcons[item.type] || Mail;
+            const label = interactionLabels[item.type] || item.type;
+            const isGmail = item.source === 'gmail_sync';
+            const isOutreach = item.source === 'outreach';
+
+            return (
+              <div key={item.id} className="rounded-lg border border-border/30 bg-secondary/30 p-3 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs font-medium flex-1 truncate">{item.subject || label}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isGmail && <Badge variant="outline" className="text-[9px] h-4 px-1">Gmail</Badge>}
+                    {isOutreach && <Badge variant="outline" className="text-[9px] h-4 px-1">Outreach</Badge>}
+                    <span className="text-[10px] text-muted-foreground/60">
+                      {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+                {item.body && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">{item.body}</p>
+                )}
               </div>
-              {email.recipient_name && (
-                <p className="text-[11px] text-muted-foreground">
-                  To: {email.recipient_name} {email.recipient_email ? `<${email.recipient_email}>` : ''}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground line-clamp-3 whitespace-pre-wrap">{email.body}</p>
-              <p className="text-[10px] text-muted-foreground/50">
-                {formatDistanceToNow(new Date(email.created_at), { addSuffix: true })}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
@@ -394,6 +572,20 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
     },
     enabled: !!deal,
   });
+  const { data: interactionsCount = [] } = useQuery({
+    queryKey: ['deal-interactions-count', deal?.id],
+    queryFn: async () => {
+      if (!deal) return [];
+      const { data, error } = await supabase
+        .from('deal_interactions')
+        .select('id')
+        .eq('deal_id', deal.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deal,
+  });
+  const touchpointCount = emails.length + interactionsCount.length;
 
   if (!deal) return null;
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
@@ -443,8 +635,8 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             <TabsTrigger value="touchpoints" className="flex-1 gap-1.5 text-xs">
               <Zap className="h-3.5 w-3.5" />
               Touchpoints
-              {emails.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{emails.length}</Badge>
+              {touchpointCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{touchpointCount}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
