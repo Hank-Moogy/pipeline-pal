@@ -635,8 +635,8 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             <TabsTrigger value="touchpoints" className="flex-1 gap-1.5 text-xs">
               <Zap className="h-3.5 w-3.5" />
               Touchpoints
-              {emails.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{emails.length}</Badge>
+              {touchpointCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{touchpointCount}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
