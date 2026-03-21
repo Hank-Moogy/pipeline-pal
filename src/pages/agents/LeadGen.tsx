@@ -175,12 +175,12 @@ export default function LeadGen() {
         });
         if (error) throw error;
 
-        const enrichment = data?.enriched?.[0];
+        const enrichment = data?.enriched?.[0] as Record<string, unknown> | undefined;
         if (enrichment) {
           setLeads((prev) =>
             prev.map((l) =>
               l.id === id
-                ? { ...l, ...enrichment, research_depth: "enriched", last_enriched_at: new Date().toISOString() }
+                ? { ...l, ...enrichment, research_depth: "enriched" as const, last_enriched_at: new Date().toISOString() }
                 : l
             )
           );
