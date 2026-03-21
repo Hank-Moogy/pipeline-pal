@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles } from 'lucide-react';
+import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getVerticalColors } from '@/lib/vertical-colors';
 import type { Deal } from '@/components/DealCard';
@@ -228,17 +230,6 @@ function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }
             </div>
           </>
         )}
-
-        <Separator className="my-3 bg-border/30" />
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-2 text-xs"
-          onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          Generate Outreach with AI
-        </Button>
       </div>
     </ScrollArea>
   );
@@ -319,8 +310,90 @@ function NotesTab({ dealId }: { dealId: string }) {
   );
 }
 
+function TouchpointsTab({ dealId }: { dealId: string }) {
+  const { data: emails = [], isLoading } = useQuery({
+    queryKey: ['outreach-emails', dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('outreach_emails')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex flex-col h-full">
+      <ScrollArea className="flex-1">
+        <div className="space-y-3 pb-4 pr-1">
+          {isLoading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!isLoading && emails.length === 0 && (
+            <div className="text-center py-10 space-y-3">
+              <Mail className="h-8 w-8 mx-auto text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground/60">No touchpoints yet</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => navigate(`/agents/crm?dealId=${dealId}`)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate with AI
+              </Button>
+            </div>
+          )}
+          {!isLoading && emails.map((email) => (
+            <div key={email.id} className="rounded-lg border border-border/30 bg-secondary/30 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold truncate flex-1">{email.subject || 'No subject'}</p>
+                <Badge
+                  variant={email.status === 'sent' ? 'default' : 'outline'}
+                  className="text-[10px] shrink-0"
+                >
+                  {email.status}
+                </Badge>
+              </div>
+              {email.recipient_name && (
+                <p className="text-[11px] text-muted-foreground">
+                  To: {email.recipient_name} {email.recipient_email ? `<${email.recipient_email}>` : ''}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground line-clamp-3 whitespace-pre-wrap">{email.body}</p>
+              <p className="text-[10px] text-muted-foreground/50">
+                {formatDistanceToNow(new Date(email.created_at), { addSuffix: true })}
+              </p>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
+  const navigate = useNavigate();
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
+  const { data: emails = [] } = useQuery({
+    queryKey: ['outreach-emails-count', deal?.id],
+    queryFn: async () => {
+      if (!deal) return [];
+      const { data, error } = await supabase
+        .from('outreach_emails')
+        .select('id')
+        .eq('deal_id', deal.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deal,
+  });
 
   if (!deal) return null;
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
@@ -328,7 +401,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-full sm:max-w-lg p-0 bg-background border-border/40 flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-3 shrink-0">
+        <SheetHeader className="px-6 pt-6 pb-3 shrink-0 space-y-3">
           <SheetTitle className="text-lg font-bold text-foreground">{deal.company || name}</SheetTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary" className="text-xs">{deal.status}</Badge>
@@ -344,6 +417,14 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Badge variant="outline" className="text-[11px] font-normal">{deal.company_size}</Badge>
             )}
           </div>
+          <Button
+            size="sm"
+            className="w-full gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
+            onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Generate Outreach with AI
+          </Button>
         </SheetHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 pb-6">
@@ -359,12 +440,22 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
                 <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{notes.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="touchpoints" className="flex-1 gap-1.5 text-xs">
+              <Zap className="h-3.5 w-3.5" />
+              Touchpoints
+              {emails.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{emails.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} uploadId={uploadId} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <NotesTab dealId={deal.id} />
+          </TabsContent>
+          <TabsContent value="touchpoints" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <TouchpointsTab dealId={deal.id} />
           </TabsContent>
         </Tabs>
       </SheetContent>
