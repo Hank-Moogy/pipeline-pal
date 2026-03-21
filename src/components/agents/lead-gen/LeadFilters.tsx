@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Briefcase, MapPin, Factory, Users, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+
 
 export interface LeadFilterValues {
   jobTitles: string[];
