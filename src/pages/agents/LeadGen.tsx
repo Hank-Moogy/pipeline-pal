@@ -85,13 +85,18 @@ export default function LeadGen() {
         if (data?.settings) {
           const settings = data.settings as Record<string, unknown>;
           setSavedICPs((settings.icps as SavedICP[]) || []);
-          setRecentSearches((settings.recent as string[]) || []);
+          const rawRecent = (settings.recent as any[]) || [];
+          // Handle migration from old string[] format to RecentSearch[]
+          const parsed: RecentSearch[] = rawRecent.map((r: any) =>
+            typeof r === "string" ? { query: r, results: [], timestamp: "" } : r
+          );
+          setRecentSearches(parsed);
         }
       });
   }, [user]);
 
   const persistSettings = useCallback(
-    async (icps: SavedICP[], recent: string[]) => {
+    async (icps: SavedICP[], recent: RecentSearch[]) => {
       if (!user) return;
       await supabase.from("agent_settings").upsert(
         { user_id: user.id, agent_type: "lead-gen-icps", settings: { icps, recent } as any },
@@ -108,10 +113,6 @@ export default function LeadGen() {
       setHasSearched(true);
       setLeads([]);
       setLastQuery(query);
-
-      const newRecent = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 10);
-      setRecentSearches(newRecent);
-      persistSettings(savedICPs, newRecent);
 
       try {
         const { data, error } = await supabase.functions.invoke("discover-leads", {
@@ -150,6 +151,13 @@ export default function LeadGen() {
         })) as LeadResult[];
 
         setLeads(rawLeads);
+
+        // Cache results in recent searches
+        const recentEntry: RecentSearch = { query, results: rawLeads, timestamp: new Date().toISOString() };
+        const newRecent = [recentEntry, ...recentSearches.filter((s) => s.query !== query)].slice(0, 10);
+        setRecentSearches(newRecent);
+        persistSettings(savedICPs, newRecent);
+
         toast.success(`${data?.inserted || 0} new leads discovered`);
       } catch (e: any) {
         console.error("Search error:", e);
@@ -159,6 +167,20 @@ export default function LeadGen() {
       }
     },
     [user, recentSearches, savedICPs, persistSettings]
+  );
+
+  const loadCachedSearch = useCallback(
+    (query: string) => {
+      const cached = recentSearches.find((r) => r.query === query);
+      if (cached && cached.results.length > 0) {
+        setLeads(cached.results);
+        setLastQuery(query);
+        setHasSearched(true);
+      } else {
+        handleSearch(query);
+      }
+    },
+    [recentSearches, handleSearch]
   );
 
   const handleSaveICP = useCallback(
@@ -359,10 +381,10 @@ export default function LeadGen() {
               onSearch={handleSearch}
               isSearching={isSearching}
               savedICPs={savedICPs}
-              recentSearches={recentSearches}
+              recentSearches={recentSearches.map((r) => r.query)}
               onSaveICP={handleSaveICP}
-              onLoadICP={(icp) => handleSearch(icp.query)}
-              onLoadRecent={(q) => handleSearch(q)}
+              onLoadICP={(icp) => loadCachedSearch(icp.query)}
+              onLoadRecent={(q) => loadCachedSearch(q)}
             />
           ) : (
             <div className="p-6 space-y-4">
