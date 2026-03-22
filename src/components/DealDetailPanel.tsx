@@ -20,6 +20,7 @@ import { getVerticalColors } from '@/lib/vertical-colors';
 import { useGmailConnection } from '@/hooks/useGmailConnection';
 import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
+import { DealContactsTab, useDealContacts } from '@/components/DealContactsTab';
 
 interface Props {
   deal: Deal | null;
