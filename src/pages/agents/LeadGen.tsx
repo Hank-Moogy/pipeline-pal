@@ -55,6 +55,12 @@ interface SavedICP {
   createdAt: string;
 }
 
+interface RecentSearch {
+  query: string;
+  results: LeadResult[];
+  timestamp: string;
+}
+
 export default function LeadGen() {
   const { user, loading } = useAuth();
   const [filters, setFilters] = useState<LeadFilterValues>(emptyFilters);
@@ -62,7 +68,7 @@ export default function LeadGen() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [savedICPs, setSavedICPs] = useState<SavedICP[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
   const [lastQuery, setLastQuery] = useState("");
   const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
   const [generatingOutreachId, setGeneratingOutreachId] = useState<string | undefined>();
