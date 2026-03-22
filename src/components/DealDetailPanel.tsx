@@ -626,6 +626,13 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Info className="h-3.5 w-3.5" />
               Details
             </TabsTrigger>
+            <TabsTrigger value="people" className="flex-1 gap-1.5 text-xs">
+              <Users className="h-3.5 w-3.5" />
+              People
+              {contacts.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{contacts.length}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="notes" className="flex-1 gap-1.5 text-xs">
               <MessageSquare className="h-3.5 w-3.5" />
               Notes
@@ -643,6 +650,9 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} uploadId={uploadId} />
+          </TabsContent>
+          <TabsContent value="people" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <DealContactsTab dealId={deal.id} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <NotesTab dealId={deal.id} />
