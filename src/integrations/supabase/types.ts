@@ -101,6 +101,59 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_contacts: {
+        Row: {
+          company: string | null
+          created_at: string
+          deal_id: string
+          email: string | null
+          first_name: string | null
+          id: string
+          is_champion: boolean
+          job_title: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          deal_id: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_champion?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          deal_id?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_champion?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_contacts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_interactions: {
         Row: {
           body: string | null

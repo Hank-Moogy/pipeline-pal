@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, User, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
+import { Building2, User, Users, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { getVerticalColors } from '@/lib/vertical-colors';
 import { useGmailConnection } from '@/hooks/useGmailConnection';
 import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
+import { DealContactsTab, useDealContacts } from '@/components/DealContactsTab';
 
 interface Props {
   deal: Deal | null;
@@ -559,6 +560,7 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   const navigate = useNavigate();
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
+  const { data: contacts = [] } = useDealContacts(deal?.id ?? null);
   const { data: emails = [] } = useQuery({
     queryKey: ['outreach-emails-count', deal?.id],
     queryFn: async () => {
@@ -625,6 +627,13 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Info className="h-3.5 w-3.5" />
               Details
             </TabsTrigger>
+            <TabsTrigger value="people" className="flex-1 gap-1.5 text-xs">
+              <Users className="h-3.5 w-3.5" />
+              People
+              {contacts.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{contacts.length}</Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="notes" className="flex-1 gap-1.5 text-xs">
               <MessageSquare className="h-3.5 w-3.5" />
               Notes
@@ -642,6 +651,9 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} uploadId={uploadId} />
+          </TabsContent>
+          <TabsContent value="people" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <DealContactsTab dealId={deal.id} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <NotesTab dealId={deal.id} />
