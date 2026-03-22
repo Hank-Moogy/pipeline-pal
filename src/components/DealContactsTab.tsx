@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -263,12 +263,49 @@ function ContactFormDialog({
   );
 }
 
-export function DealContactsTab({ dealId }: { dealId: string }) {
+interface DealForContacts {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  job_title?: string | null;
+  company?: string | null;
+  linkedin_url?: string | null;
+}
+
+export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealForContacts | null }) {
   const queryClient = useQueryClient();
   const { data: contacts = [], isLoading } = useDealContacts(dealId);
+  const [seeding, setSeeding] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editContact, setEditContact] = useState<DealContact | null>(null);
   const [viewContact, setViewContact] = useState<DealContact | null>(null);
+
+  // Auto-seed primary contact from deal fields when contacts list is empty
+  useEffect(() => {
+    if (isLoading || seeding || contacts.length > 0) return;
+    if (!deal) return;
+    const hasName = (deal.first_name?.trim() || deal.last_name?.trim());
+    if (!hasName) return;
+    setSeeding(true);
+    supabase.from('deal_contacts').insert({
+      deal_id: dealId,
+      first_name: deal.first_name?.trim() || null,
+      last_name: deal.last_name?.trim() || null,
+      email: deal.email?.trim() || null,
+      phone: deal.phone?.trim() || null,
+      job_title: deal.job_title?.trim() || null,
+      company: deal.company?.trim() || null,
+      linkedin_url: deal.linkedin_url?.trim() || null,
+      is_champion: true,
+    }).then(({ error }) => {
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+      }
+      setSeeding(false);
+    });
+  }, [isLoading, contacts.length, deal, dealId, seeding, queryClient]);
 
   const handleSetChampion = async (contactId: string) => {
     // Unset all, then set this one

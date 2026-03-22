@@ -653,7 +653,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             <DetailsTab deal={deal} uploadId={uploadId} />
           </TabsContent>
           <TabsContent value="people" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
-            <DealContactsTab dealId={deal.id} />
+            <DealContactsTab dealId={deal.id} deal={deal} />
           </TabsContent>
           <TabsContent value="notes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <NotesTab dealId={deal.id} />
