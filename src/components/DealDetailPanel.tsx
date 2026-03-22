@@ -560,6 +560,7 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   const navigate = useNavigate();
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
+  const { data: contacts = [] } = useDealContacts(deal?.id ?? null);
   const { data: emails = [] } = useQuery({
     queryKey: ['outreach-emails-count', deal?.id],
     queryFn: async () => {
