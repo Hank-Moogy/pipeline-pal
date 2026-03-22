@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -277,35 +277,40 @@ interface DealForContacts {
 export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealForContacts | null }) {
   const queryClient = useQueryClient();
   const { data: contacts = [], isLoading } = useDealContacts(dealId);
-  const [seeding, setSeeding] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editContact, setEditContact] = useState<DealContact | null>(null);
   const [viewContact, setViewContact] = useState<DealContact | null>(null);
 
-  // Auto-seed primary contact from deal fields when contacts list is empty
-  useEffect(() => {
-    if (isLoading || seeding || contacts.length > 0) return;
-    if (!deal) return;
-    const hasName = (deal.first_name?.trim() || deal.last_name?.trim());
-    if (!hasName) return;
-    setSeeding(true);
-    supabase.from('deal_contacts').insert({
+  // Build the display list: saved contacts + a virtual "main contact" from deal fields if not already in the list
+  const mainContactFromDeal: DealContact | null = (() => {
+    if (!deal) return null;
+    const hasName = deal.first_name?.trim() || deal.last_name?.trim();
+    if (!hasName) return null;
+    // Check if this person is already saved as a contact (match by name)
+    const alreadySaved = contacts.some(
+      (c) =>
+        (c.first_name || '').toLowerCase() === (deal.first_name || '').toLowerCase() &&
+        (c.last_name || '').toLowerCase() === (deal.last_name || '').toLowerCase()
+    );
+    if (alreadySaved) return null;
+    return {
+      id: `deal-main-${dealId}`,
       deal_id: dealId,
-      first_name: deal.first_name?.trim() || null,
-      last_name: deal.last_name?.trim() || null,
-      email: deal.email?.trim() || null,
-      phone: deal.phone?.trim() || null,
-      job_title: deal.job_title?.trim() || null,
-      company: deal.company?.trim() || null,
-      linkedin_url: deal.linkedin_url?.trim() || null,
+      first_name: deal.first_name || null,
+      last_name: deal.last_name || null,
+      email: deal.email || null,
+      phone: deal.phone || null,
+      job_title: deal.job_title || null,
+      company: deal.company || null,
+      linkedin_url: deal.linkedin_url || null,
+      notes: null,
       is_champion: true,
-    }).then(({ error }) => {
-      if (!error) {
-        queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
-      }
-      setSeeding(false);
-    });
-  }, [isLoading, contacts.length, deal, dealId, seeding, queryClient]);
+      created_at: '',
+    } as DealContact;
+  })();
+
+  const displayContacts = mainContactFromDeal ? [mainContactFromDeal, ...contacts] : contacts;
+  const isVirtual = (c: DealContact) => c.id.startsWith('deal-main-');
 
   const handleSetChampion = async (contactId: string) => {
     // Unset all, then set this one
@@ -334,11 +339,12 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!isLoading && contacts.length === 0 && (
+          {!isLoading && displayContacts.length === 0 && (
             <p className="text-xs text-muted-foreground/60 py-10 text-center">No contacts yet — add one below</p>
           )}
-          {contacts.map((c) => {
+          {displayContacts.map((c) => {
             const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown';
+            const virtual = isVirtual(c);
             return (
               <div
                 key={c.id}
@@ -360,25 +366,32 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
                             Champion
                           </Badge>
                         )}
+                        {virtual && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 h-4 text-muted-foreground">
+                            Main
+                          </Badge>
+                        )}
                       </div>
                       {c.job_title && (
                         <p className="text-[11px] text-muted-foreground truncate">{c.job_title}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    {!c.is_champion && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Set as Champion" onClick={() => handleSetChampion(c.id)}>
-                        <Star className="h-3.5 w-3.5 text-amber-500" />
+                  {!virtual && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      {!c.is_champion && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Set as Champion" onClick={() => handleSetChampion(c.id)}>
+                          <Star className="h-3.5 w-3.5 text-amber-500" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditContact(c)}>
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditContact(c)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 {(c.email || c.phone) && (
                   <div className="flex items-center gap-3 pl-10 text-[11px] text-muted-foreground">
