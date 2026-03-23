@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function getCssVar(name: string) {
   const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (!val) return 'transparent';
   return `hsl(${val})`;
 }
 
@@ -77,7 +78,7 @@ export function StatusChart({ metrics, dataKey, title, formatValue }: Props) {
                 ]}
                 itemStyle={{ color: fg }}
                 labelStyle={{ display: 'none' }}
-                cursor={{ fill: accent }}
+                cursor={{ fill: 'hsl(var(--accent))', opacity: 0.5 }}
               />
               <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
