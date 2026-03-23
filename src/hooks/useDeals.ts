@@ -24,6 +24,21 @@ export function useUploads() {
   });
 }
 
+export function useAllDeals() {
+  return useQuery({
+    queryKey: ['all-deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*, uploads!inner(user_id)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      // Strip the nested uploads object from each row
+      return data.map(({ uploads, ...deal }) => deal);
+    },
+  });
+}
+
 export function useDealsForUpload(uploadId: string | null) {
   return useQuery({
     queryKey: ['deals', uploadId],

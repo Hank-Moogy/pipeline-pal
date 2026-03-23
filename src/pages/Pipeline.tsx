@@ -1,10 +1,9 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useUploads, useDealsForUpload } from '@/hooks/useDeals';
-import { WeekSelector } from '@/components/WeekSelector';
+import { useAllDeals } from '@/hooks/useDeals';
 import { DealCard } from '@/components/DealCard';
 import { DealDetailPanel } from '@/components/DealDetailPanel';
 import type { Deal } from '@/components/DealCard';
@@ -41,18 +40,9 @@ function fmtCurrency(n: number) {
 export default function Pipeline() {
   const { signOut } = useAuth();
   const queryClient = useQueryClient();
-  const { data: uploads = [] } = useUploads();
-  const [selectedUploadId, setSelectedUploadId] = useState<string | null>(null);
+  const { data: deals = [] } = useAllDeals();
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    if (uploads.length > 0 && !selectedUploadId) {
-      setSelectedUploadId(uploads[0].id);
-    }
-  }, [uploads, selectedUploadId]);
-
-  const { data: deals = [] } = useDealsForUpload(selectedUploadId);
 
   const filteredDeals = useMemo(() => {
     if (!search.trim()) return deals;
@@ -90,7 +80,7 @@ export default function Pipeline() {
       if (!deal || deal.status === newStatus) return;
 
       // Optimistic update
-      queryClient.setQueryData(['deals', selectedUploadId], (old: typeof deals | undefined) =>
+      queryClient.setQueryData(['all-deals'], (old: typeof deals | undefined) =>
         (old || []).map((d) => (d.id === draggableId ? { ...d, status: newStatus } : d)),
       );
 
@@ -101,12 +91,12 @@ export default function Pipeline() {
 
       if (error) {
         toast.error('Failed to move deal');
-        queryClient.invalidateQueries({ queryKey: ['deals', selectedUploadId] });
+        queryClient.invalidateQueries({ queryKey: ['all-deals'] });
       } else {
         toast.success(`Moved to ${newStatus}`);
       }
     },
-    [deals, selectedUploadId, queryClient],
+    [deals, queryClient],
   );
 
   return (
@@ -148,12 +138,6 @@ export default function Pipeline() {
                 className="pl-9 w-56 h-9 bg-secondary/60 border-border/40 text-sm placeholder:text-muted-foreground/60"
               />
             </div>
-            <WeekSelector
-              uploads={uploads}
-              selected={selectedUploadId}
-              onSelect={setSelectedUploadId}
-              label="Week"
-            />
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="mr-2 h-4 w-4" />
@@ -239,7 +223,7 @@ export default function Pipeline() {
         deal={selectedDeal}
         open={!!selectedDeal}
         onClose={() => setSelectedDeal(null)}
-        uploadId={selectedUploadId}
+        uploadId={null}
       />
     </div>
   );

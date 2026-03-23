@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useUploads, useDealsForUpload } from '@/hooks/useDeals';
+import { useUploads, useDealsForUpload, useAllDeals } from '@/hooks/useDeals';
 import { computeMetrics, computeWow } from '@/lib/metrics';
 import { CsvUpload } from '@/components/CsvUpload';
 import { MetricCard } from '@/components/MetricCard';
@@ -19,29 +19,28 @@ function fmtCurrency(n: number) {
 export default function Dashboard() {
   const { signOut } = useAuth();
   const { data: uploads = [] } = useUploads();
+  const { data: allDeals = [] } = useAllDeals();
 
-  const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
-  const [prevUploadId, setPrevUploadId] = useState<string | null>(null);
+  const [compareUploadId, setCompareUploadId] = useState<string | null>(null);
 
-  // Auto-select latest two uploads
+  // Auto-select previous upload for WoW comparison
   useEffect(() => {
-    if (uploads.length > 0 && !currentUploadId) {
-      setCurrentUploadId(uploads[0].id);
-      if (uploads.length > 1) setPrevUploadId(uploads[1].id);
+    if (uploads.length > 1 && !compareUploadId) {
+      setCompareUploadId(uploads[1].id);
     }
-  }, [uploads, currentUploadId]);
+  }, [uploads, compareUploadId]);
 
-  const { data: currentDeals = [] } = useDealsForUpload(currentUploadId);
-  const { data: prevDeals = [] } = useDealsForUpload(prevUploadId);
+  const { data: compareDeals = [] } = useDealsForUpload(compareUploadId);
 
-  const currentMetrics = useMemo(() => computeMetrics(currentDeals), [currentDeals]);
-  const prevMetrics = useMemo(() => computeMetrics(prevDeals), [prevDeals]);
+  // Primary metrics from live pipeline
+  const currentMetrics = useMemo(() => computeMetrics(allDeals), [allDeals]);
+  const compareMetrics = useMemo(() => computeMetrics(compareDeals), [compareDeals]);
 
-  const hasPrev = prevUploadId && prevDeals.length > 0;
+  const hasCompare = compareUploadId && compareDeals.length > 0;
 
-  const wowDeals = hasPrev ? computeWow(currentMetrics.totalDeals, prevMetrics.totalDeals) : null;
-  const wowPipeline = hasPrev ? computeWow(currentMetrics.totalPipelineValue, prevMetrics.totalPipelineValue) : null;
-  const wowWeighted = hasPrev ? computeWow(currentMetrics.totalWeightedValue, prevMetrics.totalWeightedValue) : null;
+  const wowDeals = hasCompare ? computeWow(currentMetrics.totalDeals, compareMetrics.totalDeals) : null;
+  const wowPipeline = hasCompare ? computeWow(currentMetrics.totalPipelineValue, compareMetrics.totalPipelineValue) : null;
+  const wowWeighted = hasCompare ? computeWow(currentMetrics.totalWeightedValue, compareMetrics.totalWeightedValue) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,29 +82,23 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-        {/* Upload + Week selectors */}
+        {/* Upload + WoW comparison selector */}
         <div className="grid gap-6 lg:grid-cols-3">
           <CsvUpload />
           <div className="flex flex-col justify-end gap-4 lg:col-span-2">
             <div className="flex flex-wrap gap-4">
               <WeekSelector
                 uploads={uploads}
-                selected={currentUploadId}
-                onSelect={setCurrentUploadId}
-                label="Current Week"
-              />
-              <WeekSelector
-                uploads={uploads}
-                selected={prevUploadId}
-                onSelect={setPrevUploadId}
-                label="Compare With"
+                selected={compareUploadId}
+                onSelect={setCompareUploadId}
+                label="Compare With (WoW)"
               />
             </div>
           </div>
         </div>
 
         {/* Summary cards */}
-        {currentDeals.length > 0 && (
+        {allDeals.length > 0 && (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <MetricCard
@@ -167,7 +160,7 @@ export default function Dashboard() {
           </>
         )}
 
-        {currentDeals.length === 0 && uploads.length === 0 && (
+        {allDeals.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
               <BarChart3 className="h-8 w-8 text-primary" />
