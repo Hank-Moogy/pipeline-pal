@@ -46,12 +46,6 @@ export function CsvUpload() {
       if (uploadError) throw uploadError;
 
       // Fetch all existing deals for this user to match against
-      const { data: existingDeals, error: fetchError } = await supabase
-        .from('deals')
-        .select('id, external_id, first_name, last_name, company, status, prospect_owner, next_steps, description, upload_id')
-        .eq('upload_id', (await supabase.from('uploads').select('id').eq('user_id', user.id)).data?.map(u => u.id)[0] || '');
-
-      // Actually fetch all deals for user via uploads join
       const { data: allUserDeals, error: allDealsError } = await supabase
         .from('deals')
         .select('id, external_id, first_name, last_name, company, status, prospect_owner, next_steps, description, upload_id, uploads!inner(user_id)')
