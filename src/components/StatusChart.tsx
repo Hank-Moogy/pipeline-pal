@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function getCssVar(name: string) {
   const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (!val) return 'transparent';
   return `hsl(${val})`;
 }
 
