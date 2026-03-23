@@ -29,26 +29,104 @@ export function CsvUpload() {
     setDone(false);
 
     try {
-      const deals = await parseCsvFile(file);
+      const parsedDeals = await parseCsvFile(file);
 
-      // Create upload record
+      // Create upload record (for historical tracking)
       const { data: upload, error: uploadError } = await supabase
         .from('uploads')
         .insert({
           user_id: user.id,
           week_label: weekLabel,
           file_name: file.name,
-          record_count: deals.length,
+          record_count: parsedDeals.length,
         })
         .select()
         .single();
 
       if (uploadError) throw uploadError;
 
-      // Insert deals in batches of 100
+      // Fetch all existing deals for this user to match against
+      const { data: allUserDeals, error: allDealsError } = await supabase
+        .from('deals')
+        .select('id, external_id, first_name, last_name, company, status, prospect_owner, next_steps, description, upload_id, uploads!inner(user_id)')
+        .eq('uploads.user_id', user.id);
+
+      if (allDealsError) throw allDealsError;
+
+      // Build lookup maps for matching
+      const byExternalId = new Map<string, typeof allUserDeals[0]>();
+      const byNameCompany = new Map<string, typeof allUserDeals[0]>();
+
+      for (const deal of (allUserDeals || [])) {
+        if (deal.external_id) {
+          byExternalId.set(deal.external_id, deal);
+        }
+        const key = `${(deal.first_name || '').toLowerCase()}|${(deal.last_name || '').toLowerCase()}|${(deal.company || '').toLowerCase()}`;
+        if (key !== '||') {
+          byNameCompany.set(key, deal);
+        }
+      }
+
+      const newDeals: ParsedDeal[] = [];
+      const updates: { dealId: string; changes: Record<string, unknown> }[] = [];
+      const notesToInsert: { deal_id: string; content: string; author: string; note_type: string }[] = [];
+
+      for (const parsed of parsedDeals) {
+        // Match by external_id first, then by name+company
+        const existing =
+          (parsed.external_id && byExternalId.get(parsed.external_id)) ||
+          byNameCompany.get(
+            `${parsed.first_name.toLowerCase()}|${parsed.last_name.toLowerCase()}|${parsed.company.toLowerCase()}`
+          );
+
+        if (existing) {
+          // Build conservative update: only status, prospect_owner, next_steps (if changed)
+          const changes: Record<string, unknown> = {};
+
+          if (parsed.status && parsed.status !== existing.status) {
+            changes.status = parsed.status;
+          }
+          if (parsed.prospect_owner && parsed.prospect_owner !== existing.prospect_owner) {
+            changes.prospect_owner = parsed.prospect_owner;
+          }
+          if (parsed.next_steps && parsed.next_steps !== (existing.next_steps || '')) {
+            changes.next_steps = parsed.next_steps;
+          }
+
+          if (Object.keys(changes).length > 0) {
+            updates.push({ dealId: existing.id, changes });
+          }
+
+          // If CSV has a description that differs from existing, add as a note
+          if (parsed.description && parsed.description !== (existing.description || '')) {
+            notesToInsert.push({
+              deal_id: existing.id,
+              content: parsed.description,
+              author: 'CSV Import',
+              note_type: 'note',
+            });
+          }
+        } else {
+          newDeals.push(parsed);
+        }
+      }
+
+      // Execute updates
+      for (const { dealId, changes } of updates) {
+        const { error } = await supabase.from('deals').update(changes).eq('id', dealId);
+        if (error) console.error('Update deal error:', error);
+      }
+
+      // Insert new notes
+      if (notesToInsert.length > 0) {
+        const { error } = await supabase.from('deal_notes').insert(notesToInsert);
+        if (error) console.error('Insert notes error:', error);
+      }
+
+      // Insert new deals in batches of 100
       const BATCH = 100;
-      for (let i = 0; i < deals.length; i += BATCH) {
-        const batch = deals.slice(i, i + BATCH).map((d: ParsedDeal) => ({
+      for (let i = 0; i < newDeals.length; i += BATCH) {
+        const batch = newDeals.slice(i, i + BATCH).map((d: ParsedDeal) => ({
           upload_id: upload.id,
           ...d,
         }));
@@ -58,8 +136,17 @@ export function CsvUpload() {
 
       queryClient.invalidateQueries({ queryKey: ['uploads'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+
+      const updatedCount = updates.length;
+      const newCount = newDeals.length;
+      const notesCount = notesToInsert.length;
+
       setDone(true);
-      toast({ title: 'Upload complete', description: `${deals.length} deals imported for week ${weekLabel}` });
+      toast({
+        title: 'Upload complete',
+        description: `${newCount} new, ${updatedCount} updated, ${notesCount} notes added`,
+      });
     } catch (err: any) {
       toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
     } finally {
