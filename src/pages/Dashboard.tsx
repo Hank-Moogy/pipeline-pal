@@ -11,7 +11,7 @@ import { BarChart3, DollarSign, Scale, Clock, Upload } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
 
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 }
 
 export default function Dashboard() {
