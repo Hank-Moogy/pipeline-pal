@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { TrendingUp, LogOut, BarChart3, Kanban, Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight, Settings } from "lucide-react";
+import { Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight, Settings } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
 
 const AGENTS = [
   {
