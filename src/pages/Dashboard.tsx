@@ -6,7 +6,6 @@ import { CsvUpload } from '@/components/CsvUpload';
 import { MetricCard } from '@/components/MetricCard';
 import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
-import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot, Upload } from 'lucide-react';
@@ -24,7 +23,7 @@ export default function Dashboard() {
 
   const [compareUploadId, setCompareUploadId] = useState<string | null>(null);
 
-  // Auto-select previous upload for WoW comparison
+  // Auto-select previous upload for WoW
   useEffect(() => {
     if (uploads.length > 1 && !compareUploadId) {
       setCompareUploadId(uploads[1].id);
@@ -99,12 +98,6 @@ export default function Dashboard() {
               <CsvUpload />
             </DialogContent>
           </Dialog>
-          <WeekSelector
-            uploads={uploads}
-            selected={compareUploadId}
-            onSelect={setCompareUploadId}
-            label="Compare With (WoW)"
-          />
         </div>
 
         {/* Summary cards */}
