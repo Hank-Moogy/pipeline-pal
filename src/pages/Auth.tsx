@@ -62,7 +62,7 @@ export default function Auth() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Argentic</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">Mago Growth OS</CardTitle>
           <CardDescription className="text-muted-foreground">
             {isLogin ? 'Sign in to your account' : 'Create a new account'}
           </CardDescription>
