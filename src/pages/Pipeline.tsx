@@ -163,7 +163,17 @@ export default function Pipeline() {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={handleSyncTranscripts}
+              disabled={syncing}
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing…' : 'Sync Transcripts'}
+            </Button>
             <Button
               variant="outline"
               size="sm"
