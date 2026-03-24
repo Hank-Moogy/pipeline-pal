@@ -392,6 +392,6 @@ export default function Pipeline() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 }
