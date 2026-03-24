@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useUploads, useAllDeals, usePipelineSnapshot } from '@/hooks/useDeals';
-import { useUploads, useAllDeals, usePipelineSnapshot } from '@/hooks/useDeals';
 import { computeMetrics, computeWow } from '@/lib/metrics';
 import { CsvUpload } from '@/components/CsvUpload';
 import { MetricCard } from '@/components/MetricCard';
