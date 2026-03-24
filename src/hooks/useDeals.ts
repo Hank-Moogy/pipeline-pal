@@ -115,6 +115,7 @@ export function useUpdateDeal() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
     },
   });
 }
