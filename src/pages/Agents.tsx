@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { TrendingUp, LogOut, BarChart3, Kanban, Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight } from "lucide-react";
+import { TrendingUp, LogOut, BarChart3, Kanban, Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight, Settings } from "lucide-react";
 
 const AGENTS = [
   {
