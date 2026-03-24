@@ -94,7 +94,7 @@ export default function Agents() {
               </Link>
               <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
                 <Bot className="h-4 w-4" />
-                Agents
+                Agents ⚠️WIP
               </Button>
             </nav>
           </div>
