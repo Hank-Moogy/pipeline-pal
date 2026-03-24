@@ -84,6 +84,28 @@ function detectCsvType(headers: string[]): 'people' | 'notes' {
   return 'people';
 }
 
+/** Normalize common status typos from CSV exports */
+const STATUS_CORRECTIONS: Record<string, string> = {
+  'recyle': 'Recycle',
+  'recylce': 'Recycle',
+  'commited': 'Committed',
+  'comitted': 'Committed',
+  'closedwon': 'Closed-won',
+  'closedlost': 'Closed-lost',
+  'closed won': 'Closed-won',
+  'closed lost': 'Closed-lost',
+};
+
+function normalizeStatus(raw: string): string {
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+  if (STATUS_CORRECTIONS[lower]) return STATUS_CORRECTIONS[lower];
+  // Match against known stages (case-insensitive)
+  const KNOWN = ['Lead', 'Prospect', 'Email follow up', 'Discovery Meeting', 'Tech Qualification', 'Design proposal', 'Committed', 'Closed-won', 'Closed-lost', 'Recycle'];
+  const match = KNOWN.find((s) => s.toLowerCase() === lower);
+  return match || trimmed;
+}
+
 export function parseCsvFile(file: File): Promise<CsvParseResult> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
@@ -112,7 +134,7 @@ export function parseCsvFile(file: File): Promise<CsvParseResult> {
             last_name: row.lastname || '',
             company: (row.companies || '').split(',')[0]?.trim() || '',
             job_title: row.jobTitle || '',
-            status: (row.Status || '').trim(),
+            status: normalizeStatus(row.Status || ''),
             deal_value: parseFloat(row['Deal value']) || 0,
             actual_acv: parseFloat(row['Actual ACV']) || 0,
             company_size: row['Company size'] || '',
