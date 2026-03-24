@@ -109,6 +109,85 @@ function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'te
     </div>
   );
 }
+const DEFAULT_DEAL_VALUES = [48000, 15000, 1800];
+
+function DealValueSelect({ deal }: { deal: Deal }) {
+  const updateDeal = useUpdateDeal();
+  const [customValue, setCustomValue] = useState('');
+
+  const currentValue = deal.deal_value ?? 0;
+
+  const selectPreset = async (val: number) => {
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { deal_value: val } });
+      toast.success('Deal value updated');
+    } catch {
+      toast.error('Failed to update deal value');
+    }
+  };
+
+  const saveCustom = async () => {
+    const num = parseFloat(customValue);
+    if (isNaN(num)) return;
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { deal_value: num } });
+      toast.success('Deal value updated');
+      setCustomValue('');
+    } catch {
+      toast.error('Failed to update deal value');
+    }
+  };
+
+  const fmtVal = (n: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1.5">Deal Value</p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full justify-between text-sm bg-secondary/40 border-border/40 font-normal">
+              <span className="truncate">
+                {currentValue ? fmtVal(currentValue) : <span className="text-muted-foreground/50 italic">Select deal value…</span>}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 ml-1 shrink-0 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start">
+            <div className="space-y-0.5">
+              {DEFAULT_DEAL_VALUES.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => selectPreset(v)}
+                  className={`flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left ${currentValue === v ? 'bg-accent font-medium' : ''}`}
+                >
+                  {fmtVal(v)}
+                </button>
+              ))}
+            </div>
+            <Separator className="my-1.5" />
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveCustom()}
+                placeholder="Custom amount…"
+                type="number"
+                className="h-7 text-xs"
+              />
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" onClick={saveCustom} disabled={!customValue.trim()}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
+
 const DEFAULT_VERTICAL_OPTIONS = ['VFX', 'Animation', 'TV', 'Advertisement'];
 
 function VerticalMultiSelect({ deal }: { deal: Deal }) {
@@ -372,7 +451,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Deal</p>
         <StatusSelect deal={deal} />
-        <EditableField icon={DollarSign} label="Deal Value" value={deal.deal_value} fieldName="deal_value" dealId={deal.id} type="number" />
+        <DealValueSelect deal={deal} />
         <EditableField label="Actual ACV" value={deal.actual_acv} fieldName="actual_acv" dealId={deal.id} type="number" />
         <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
         <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
