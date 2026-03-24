@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, RefreshCw } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
@@ -44,8 +46,10 @@ export default function Pipeline() {
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [channelDialogOpen, setChannelDialogOpen] = useState(false);
+  const [channelInput, setChannelInput] = useState('');
 
-  const handleSyncTranscripts = useCallback(async () => {
+  const doSync = useCallback(async (channelId?: string) => {
     setSyncing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -53,6 +57,9 @@ export default function Pipeline() {
         toast.error('Please sign in first');
         return;
       }
+      const body: Record<string, string> = { user_id: session.user.id };
+      if (channelId) body.channel_id = channelId;
+
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-slack-transcripts`,
         {
@@ -61,11 +68,15 @@ export default function Pipeline() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ user_id: session.user.id }),
+          body: JSON.stringify(body),
         }
       );
       const result = await resp.json();
       if (!resp.ok) {
+        if (result.error?.includes('channel_id')) {
+          setChannelDialogOpen(true);
+          return;
+        }
         toast.error(result.error || 'Sync failed');
       } else {
         toast.success(`Synced: ${result.matched} matched, ${result.unmatched} unmatched`);
@@ -78,6 +89,26 @@ export default function Pipeline() {
       setSyncing(false);
     }
   }, [queryClient]);
+
+  const handleSyncTranscripts = useCallback(() => doSync(), [doSync]);
+
+  const handleChannelSubmit = useCallback(() => {
+    const id = channelInput.trim();
+    if (!id) return;
+    setChannelDialogOpen(false);
+    // Save setting then sync
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await supabase.from('agent_settings').upsert({
+        user_id: session.user.id,
+        agent_type: 'slack-transcript-sync',
+        settings: { channel_id: id },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,agent_type' });
+      doSync(id);
+    })();
+  }, [channelInput, doSync]);
 
   const filteredDeals = useMemo(() => {
     if (!search.trim()) return deals;
@@ -296,6 +327,27 @@ export default function Pipeline() {
         onClose={() => setSelectedDeal(null)}
         uploadId={null}
       />
+      <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Slack Channel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="channel-id">Channel name or ID where Granola posts transcripts</Label>
+            <Input
+              id="channel-id"
+              placeholder="e.g. sales-transcripts or C0123456789"
+              value={channelInput}
+              onChange={(e) => setChannelInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleChannelSubmit()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChannelDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleChannelSubmit} disabled={!channelInput.trim()}>Save & Sync</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
