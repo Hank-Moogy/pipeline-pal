@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useAllDeals } from '@/hooks/useDeals';
+import { useAllDeals, useUploads } from '@/hooks/useDeals';
 import { DealCard } from '@/components/DealCard';
 import { DealDetailPanel } from '@/components/DealDetailPanel';
 import type { Deal } from '@/components/DealCard';
@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,75 +41,75 @@ function fmtCurrency(n: number) {
 }
 
 export default function Pipeline() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const { data: deals = [] } = useAllDeals();
+  const { data: uploads = [] } = useUploads();
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [search, setSearch] = useState('');
-  const [syncing, setSyncing] = useState(false);
-  const [channelDialogOpen, setChannelDialogOpen] = useState(false);
-  const [channelInput, setChannelInput] = useState('');
 
-  const doSync = useCallback(async (channelId?: string) => {
-    setSyncing(true);
+  // Add lead dialog state
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [newLead, setNewLead] = useState({
+    first_name: '',
+    last_name: '',
+    company: '',
+    job_title: '',
+    email: '',
+    deal_value: '',
+    status: 'Lead',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleAddLead = useCallback(async () => {
+    if (!user || !newLead.first_name.trim()) return;
+    setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Please sign in first');
-        return;
-      }
-      const body: Record<string, string> = { user_id: session.user.id };
-      if (channelId) body.channel_id = channelId;
+      let uploadId = uploads[0]?.id;
 
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-slack-transcripts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(body),
-        }
-      );
-      const result = await resp.json();
-      if (!resp.ok) {
-        if (result.error?.includes('channel_id')) {
-          setChannelDialogOpen(true);
-          return;
-        }
-        toast.error(result.error || 'Sync failed');
-      } else {
-        toast.success(`Synced: ${result.matched} matched, ${result.unmatched} unmatched`);
-        queryClient.invalidateQueries({ queryKey: ['deal_notes'] });
+      // If no uploads exist, create a placeholder one
+      if (!uploadId) {
+        const d = new Date();
+        const monday = new Date(d);
+        monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+        const { data, error } = await supabase
+          .from('uploads')
+          .insert({
+            user_id: user.id,
+            week_label: monday.toISOString().split('T')[0],
+            file_name: 'manual-entry',
+            record_count: 0,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        uploadId = data.id;
+        queryClient.invalidateQueries({ queryKey: ['uploads'] });
       }
-    } catch (e) {
-      toast.error('Failed to sync transcripts');
-      console.error(e);
+
+      const { error } = await supabase.from('deals').insert({
+        upload_id: uploadId,
+        first_name: newLead.first_name.trim(),
+        last_name: newLead.last_name.trim(),
+        company: newLead.company.trim(),
+        job_title: newLead.job_title.trim(),
+        email: newLead.email.trim(),
+        deal_value: parseFloat(newLead.deal_value) || 0,
+        status: newLead.status,
+      });
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+      toast.success('Lead added');
+      setAddLeadOpen(false);
+      setNewLead({ first_name: '', last_name: '', company: '', job_title: '', email: '', deal_value: '', status: 'Lead' });
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to add lead');
     } finally {
-      setSyncing(false);
+      setSaving(false);
     }
-  }, [queryClient]);
-
-  const handleSyncTranscripts = useCallback(() => doSync(), [doSync]);
-
-  const handleChannelSubmit = useCallback(() => {
-    const id = channelInput.trim();
-    if (!id) return;
-    setChannelDialogOpen(false);
-    // Save setting then sync
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      await supabase.from('agent_settings').upsert({
-        user_id: session.user.id,
-        agent_type: 'slack-transcript-sync',
-        settings: { channel_id: id },
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,agent_type' });
-      doSync(id);
-    })();
-  }, [channelInput, doSync]);
+  }, [user, newLead, uploads, queryClient]);
 
   const filteredDeals = useMemo(() => {
     if (!search.trim()) return deals;
@@ -145,7 +146,6 @@ export default function Pipeline() {
       const deal = deals.find((d) => d.id === draggableId);
       if (!deal || deal.status === newStatus) return;
 
-      // Optimistic update
       queryClient.setQueryData(['all-deals'], (old: typeof deals | undefined) =>
         (old || []).map((d) => (d.id === draggableId ? { ...d, status: newStatus } : d)),
       );
@@ -196,14 +196,13 @@ export default function Pipeline() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               className="gap-1.5 text-xs"
-              onClick={handleSyncTranscripts}
-              disabled={syncing}
+              onClick={() => setAddLeadOpen(true)}
             >
-              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing…' : 'Sync Transcripts'}
+              <Plus className="h-4 w-4" />
+              Add Lead
             </Button>
             <Button
               variant="outline"
@@ -327,24 +326,61 @@ export default function Pipeline() {
         onClose={() => setSelectedDeal(null)}
         uploadId={null}
       />
-      <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
+
+      {/* Add Lead Dialog */}
+      <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Set Slack Channel</DialogTitle>
+            <DialogTitle>Add New Lead</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="channel-id">Channel name or ID where Granola posts transcripts</Label>
-            <Input
-              id="channel-id"
-              placeholder="e.g. sales-transcripts or C0123456789"
-              value={channelInput}
-              onChange={(e) => setChannelInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleChannelSubmit()}
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="lead-first">First Name *</Label>
+                <Input id="lead-first" value={newLead.first_name} onChange={(e) => setNewLead(p => ({ ...p, first_name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="lead-last">Last Name</Label>
+                <Input id="lead-last" value={newLead.last_name} onChange={(e) => setNewLead(p => ({ ...p, last_name: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="lead-company">Company</Label>
+              <Input id="lead-company" value={newLead.company} onChange={(e) => setNewLead(p => ({ ...p, company: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="lead-title">Job Title</Label>
+              <Input id="lead-title" value={newLead.job_title} onChange={(e) => setNewLead(p => ({ ...p, job_title: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="lead-email">Email</Label>
+              <Input id="lead-email" type="email" value={newLead.email} onChange={(e) => setNewLead(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="lead-value">Deal Value</Label>
+                <Input id="lead-value" type="number" placeholder="0" value={newLead.deal_value} onChange={(e) => setNewLead(p => ({ ...p, deal_value: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Status</Label>
+                <Select value={newLead.status} onValueChange={(v) => setNewLead(p => ({ ...p, status: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STAGE_ORDER.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setChannelDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleChannelSubmit} disabled={!channelInput.trim()}>Save & Sync</Button>
+            <Button variant="outline" onClick={() => setAddLeadOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddLead} disabled={saving || !newLead.first_name.trim()}>
+              {saving ? 'Saving…' : 'Add Lead'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
