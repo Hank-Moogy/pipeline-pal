@@ -155,57 +155,49 @@ export function CsvUpload() {
   }, [file, user, weekLabel, queryClient, toast]);
 
   return (
-    <Card className="border-border/50 bg-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <FileSpreadsheet className="h-5 w-5 text-primary" />
-          Upload Weekly CSV
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">Week starting</label>
-          <Input
-            type="date"
-            value={weekLabel}
-            onChange={(e) => setWeekLabel(e.target.value)}
-            className="bg-secondary/50"
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm text-muted-foreground">Week starting</label>
+        <Input
+          type="date"
+          value={weekLabel}
+          onChange={(e) => setWeekLabel(e.target.value)}
+          className="bg-secondary/50"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm text-muted-foreground">CSV File</label>
+        <div className="relative">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={(e) => { setFile(e.target.files?.[0] || null); setDone(false); }}
+            className="block w-full cursor-pointer rounded-md border border-input bg-secondary/50 px-3 py-2 text-sm file:mr-3 file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-sm file:font-medium file:text-primary"
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">CSV File</label>
-          <div className="relative">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => { setFile(e.target.files?.[0] || null); setDone(false); }}
-              className="block w-full cursor-pointer rounded-md border border-input bg-secondary/50 px-3 py-2 text-sm file:mr-3 file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-sm file:font-medium file:text-primary"
-            />
-          </div>
-        </div>
-        <Button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className="w-full font-semibold"
-        >
-          {uploading ? (
-            <span className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              Processing…
-            </span>
-          ) : done ? (
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Uploaded!
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload & Process
-            </span>
-          )}
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+      <Button
+        onClick={handleUpload}
+        disabled={!file || uploading}
+        className="w-full font-semibold"
+      >
+        {uploading ? (
+          <span className="flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            Processing…
+          </span>
+        ) : done ? (
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Uploaded!
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload & Process
+          </span>
+        )}
+      </Button>
+    </div>
   );
 }
