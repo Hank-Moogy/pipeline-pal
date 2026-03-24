@@ -115,9 +115,9 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
   const updateDeal = useUpdateDeal();
   const queryClient = useQueryClient();
 
-  // Get all distinct verticals from existing deals
-  const { data: allDeals = [] } = useQuery({
-    queryKey: ['all-deals'],
+  // Get all distinct verticals from existing deals (use separate query key to avoid overwriting main deals cache)
+  const { data: verticalData = [] } = useQuery({
+    queryKey: ['distinct-verticals'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('deals')
