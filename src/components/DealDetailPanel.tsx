@@ -451,7 +451,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Deal</p>
         <StatusSelect deal={deal} />
-        <EditableField icon={DollarSign} label="Deal Value" value={deal.deal_value} fieldName="deal_value" dealId={deal.id} type="number" />
+        <DealValueSelect deal={deal} />
         <EditableField label="Actual ACV" value={deal.actual_acv} fieldName="actual_acv" dealId={deal.id} type="number" />
         <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
         <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
