@@ -38,6 +38,8 @@ function fmtDate(d: string | null) {
   try { return format(new Date(d), 'MMM d, yyyy'); } catch { return d; }
 }
 
+const OWNER_OPTIONS = ['Alvaro', 'Andre', 'Samori'];
+
 function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: string; value: React.ReactNode }) {
   if (!value) return null;
   return (
@@ -47,6 +49,62 @@ function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: 
       <div className="flex-1 min-w-0">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">{label}</p>
         <p className="text-sm text-foreground break-words">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'text' }: {
+  icon?: React.ElementType; label: string; value: string | number | null; fieldName: string; dealId: string; type?: 'text' | 'number';
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(value ?? ''));
+  const updateDeal = useUpdateDeal();
+
+  // Sync when deal changes externally
+  useEffect(() => {
+    if (!editing) setVal(String(value ?? ''));
+  }, [value, editing]);
+
+  const handleSave = async () => {
+    const parsed = type === 'number' ? (val.trim() ? Number(val) : null) : (val.trim() || null);
+    try {
+      await updateDeal.mutateAsync({ dealId, updates: { [fieldName]: parsed } });
+      toast.success(`${label} updated`);
+      setEditing(false);
+    } catch {
+      toast.error(`Failed to update ${label.toLowerCase()}`);
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      {Icon ? <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" /> : <div className="w-4" />}
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">{label}</p>
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              type={type}
+              className="h-7 text-sm bg-secondary/40 border-border/40"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setVal(String(value ?? '')); setEditing(false); } }}
+            />
+            <Button size="sm" onClick={handleSave} disabled={updateDeal.isPending} className="h-7 text-xs px-2">
+              {updateDeal.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setVal(String(value ?? '')); setEditing(false); }} className="h-7 text-xs px-2">✕</Button>
+          </div>
+        ) : (
+          <button onClick={() => setEditing(true)} className="w-full text-left group/ef">
+            <p className="text-sm text-foreground break-words">
+              {value ?? <span className="text-muted-foreground/50 italic">Click to add…</span>}
+            </p>
+            <span className="text-[10px] text-muted-foreground/0 group-hover/ef:text-muted-foreground/40 transition-colors">Click to edit</span>
+          </button>
+        )}
       </div>
     </div>
   );
