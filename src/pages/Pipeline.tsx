@@ -327,6 +327,27 @@ export default function Pipeline() {
         onClose={() => setSelectedDeal(null)}
         uploadId={null}
       />
+      <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Slack Channel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="channel-id">Channel name or ID where Granola posts transcripts</Label>
+            <Input
+              id="channel-id"
+              placeholder="e.g. sales-transcripts or C0123456789"
+              value={channelInput}
+              onChange={(e) => setChannelInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleChannelSubmit()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChannelDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleChannelSubmit} disabled={!channelInput.trim()}>Save & Sync</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
