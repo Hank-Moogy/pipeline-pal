@@ -23,7 +23,7 @@ export default function Dashboard() {
 
   const [compareUploadId, setCompareUploadId] = useState<string | null>(null);
 
-  // Auto-select previous upload for WoW comparison
+  // Auto-select previous upload for WoW
   useEffect(() => {
     if (uploads.length > 1 && !compareUploadId) {
       setCompareUploadId(uploads[1].id);
