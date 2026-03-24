@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUploads, useAllDeals, usePipelineSnapshot } from '@/hooks/useDeals';
 import { computeMetrics, computeWow } from '@/lib/metrics';
