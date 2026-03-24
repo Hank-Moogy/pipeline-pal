@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, RefreshCw } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -43,6 +43,41 @@ export default function Pipeline() {
   const { data: deals = [] } = useAllDeals();
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSyncTranscripts = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in first');
+        return;
+      }
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-slack-transcripts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ user_id: session.user.id }),
+        }
+      );
+      const result = await resp.json();
+      if (!resp.ok) {
+        toast.error(result.error || 'Sync failed');
+      } else {
+        toast.success(`Synced: ${result.matched} matched, ${result.unmatched} unmatched`);
+        queryClient.invalidateQueries({ queryKey: ['deal_notes'] });
+      }
+    } catch (e) {
+      toast.error('Failed to sync transcripts');
+      console.error(e);
+    } finally {
+      setSyncing(false);
+    }
+  }, [queryClient]);
 
   const filteredDeals = useMemo(() => {
     if (!search.trim()) return deals;
@@ -128,7 +163,17 @@ export default function Pipeline() {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={handleSyncTranscripts}
+              disabled={syncing}
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing…' : 'Sync Transcripts'}
+            </Button>
             <Button
               variant="outline"
               size="sm"
