@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, RefreshCw } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
