@@ -764,8 +764,6 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
           {!isLoading && timeline.map((item) => {
             const Icon = interactionIcons[item.type] || Mail;
             const label = interactionLabels[item.type] || item.type;
-            const isGmail = item.source === 'gmail_sync';
-            const isOutreach = item.source === 'outreach';
             const isMago = item.contactEmail?.endsWith('@mago.studio') || item.type === 'email_sent';
             const borderColor = isMago
               ? 'border-l-primary'
