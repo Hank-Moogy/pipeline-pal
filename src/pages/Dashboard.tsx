@@ -8,9 +8,8 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot, Upload } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Link } from 'react-router-dom';
+import { BarChart3, DollarSign, Scale, Clock, Upload } from 'lucide-react';
+import { AppLayout } from '@/components/AppLayout';
 
 function fmtCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
