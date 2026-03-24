@@ -45,6 +45,22 @@ const AGENTS = [
 export default function Agents() {
   const { user, loading, signOut } = useAuth();
 
+  const { data: botConfig } = useQuery({
+    queryKey: ['bot-config-name', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bot_configs')
+        .select('name, identity')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const botName = botConfig?.name || 'ClawBot';
+  const botEmoji = (botConfig?.identity as any)?.emoji || '🤖';
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
