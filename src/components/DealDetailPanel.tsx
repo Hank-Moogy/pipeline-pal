@@ -762,22 +762,36 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
             const isOutreach = item.source === 'outreach';
 
             return (
-              <div key={item.id} className="rounded-lg border border-border/30 bg-secondary/30 p-3 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs font-medium flex-1 truncate">{item.subject || label}</span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {isGmail && <Badge variant="outline" className="text-[9px] h-4 px-1">Gmail</Badge>}
-                    {isOutreach && <Badge variant="outline" className="text-[9px] h-4 px-1">Outreach</Badge>}
-                    <span className="text-[10px] text-muted-foreground/60">
-                      {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
-                    </span>
-                  </div>
+              <Collapsible key={item.id}>
+                <div className="rounded-lg border border-border/30 bg-secondary/30 overflow-hidden">
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full p-3 flex items-center gap-2 text-left hover:bg-accent/30 transition-colors group">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-medium flex-1 truncate">{item.subject || label}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isGmail && <Badge variant="outline" className="text-[9px] h-4 px-1">Gmail</Badge>}
+                        {isOutreach && <Badge variant="outline" className="text-[9px] h-4 px-1">Outreach</Badge>}
+                        <span className="text-[10px] text-muted-foreground/60">
+                          {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                        </span>
+                        <ChevronDown className="h-3 w-3 text-muted-foreground/50 transition-transform group-data-[state=open]:rotate-180" />
+                      </div>
+                    </button>
+                  </CollapsibleTrigger>
+                  {item.body && (
+                    <CollapsibleContent>
+                      <div className="px-3 pb-3 pt-0 border-t border-border/20">
+                        {item.contactEmail && (
+                          <p className="text-[10px] text-muted-foreground/60 mt-2 mb-1.5">To: {item.contactEmail}</p>
+                        )}
+                        <div className="mt-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words [&>*]:mb-1.5">
+                          {decodeHtmlEntities(item.body)}
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  )}
                 </div>
-                {item.body && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">{item.body}</p>
-                )}
-              </div>
+              </Collapsible>
             );
           })}
         </div>
