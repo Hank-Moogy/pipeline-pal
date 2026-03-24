@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, User, Users, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal } from '@/hooks/useDeals';
@@ -103,6 +105,87 @@ function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'te
             <span className="text-[10px] text-muted-foreground/0 group-hover/ef:text-muted-foreground/40 transition-colors">Click to edit</span>
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+const KNOWN_VERTICAL_OPTIONS = ['VFX', 'Animation', 'Gaming', 'Film', 'Broadcast', 'Advertising', 'Architecture', 'Education', 'Post Production', 'Immersive', 'Automotive', 'Design'];
+
+function VerticalMultiSelect({ deal }: { deal: Deal }) {
+  const updateDeal = useUpdateDeal();
+  const queryClient = useQueryClient();
+
+  // Get all distinct verticals from existing deals
+  const { data: allDeals = [] } = useQuery({
+    queryKey: ['all-deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('company_vertical');
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
+  const allVerticals = useMemo(() => {
+    const fromDeals = allDeals
+      .flatMap((d: any) => (d.company_vertical || '').split(',').map((s: string) => s.trim()))
+      .filter((s: string) => s.length > 0);
+    const combined = new Set([...KNOWN_VERTICAL_OPTIONS, ...fromDeals]);
+    return [...combined].sort();
+  }, [allDeals]);
+
+  // Parse current value (comma-separated) into array
+  const selected = useMemo(() => {
+    if (!deal.company_vertical) return [] as string[];
+    return deal.company_vertical.split(',').map((s) => s.trim()).filter(Boolean);
+  }, [deal.company_vertical]);
+
+  const toggle = async (vertical: string) => {
+    const next = selected.includes(vertical)
+      ? selected.filter((v) => v !== vertical)
+      : [...selected, vertical];
+    const newValue = next.join(', ') || null;
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { company_vertical: newValue } });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+    } catch {
+      toast.error('Failed to update vertical');
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <div className="w-4" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1.5">Vertical</p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full justify-between text-sm bg-secondary/40 border-border/40 font-normal">
+              <span className="truncate">
+                {selected.length > 0 ? selected.join(', ') : <span className="text-muted-foreground/50 italic">Select verticals…</span>}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 ml-1 shrink-0 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start">
+            <ScrollArea className="max-h-56">
+              <div className="space-y-0.5">
+                {allVerticals.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => toggle(v)}
+                    className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
+                  >
+                    <Checkbox checked={selected.includes(v)} className="pointer-events-none" />
+                    <span>{v}</span>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
@@ -246,7 +329,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
         <EditableField icon={Building2} label="Company" value={deal.company} fieldName="company" dealId={deal.id} />
-        <EditableField label="Vertical" value={deal.company_vertical} fieldName="company_vertical" dealId={deal.id} />
+        <VerticalMultiSelect deal={deal} />
         <EditableField label="Size" value={deal.company_size} fieldName="company_size" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
