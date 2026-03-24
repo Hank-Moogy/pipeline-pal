@@ -321,7 +321,7 @@ export default function Pipeline() {
                                   {...dragProvided.dragHandleProps}
                                   className={dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}
                                 >
-                                  <DealCard deal={deal} onClick={setSelectedDeal} />
+                                  <DealCard deal={deal} onClick={(d) => setSelectedDealId(d.id)} />
                                 </div>
                               )}
                             </Draggable>
