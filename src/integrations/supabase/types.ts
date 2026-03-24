@@ -101,6 +101,89 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_configs: {
+        Row: {
+          created_at: string
+          id: string
+          identity: Json | null
+          instructions: string | null
+          model_preference: string | null
+          name: string
+          soul: string | null
+          tools_notes: string | null
+          updated_at: string
+          user_id: string
+          user_profile: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identity?: Json | null
+          instructions?: string | null
+          model_preference?: string | null
+          name?: string
+          soul?: string | null
+          tools_notes?: string | null
+          updated_at?: string
+          user_id: string
+          user_profile?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identity?: Json | null
+          instructions?: string | null
+          model_preference?: string | null
+          name?: string
+          soul?: string | null
+          tools_notes?: string | null
+          updated_at?: string
+          user_id?: string
+          user_profile?: string | null
+        }
+        Relationships: []
+      }
+      bot_skills: {
+        Row: {
+          bot_id: string
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          instructions: string | null
+          name: string
+          tool_definitions: Json | null
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          name: string
+          tool_definitions?: Json | null
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          name?: string
+          tool_definitions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_skills_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_contacts: {
         Row: {
           company: string | null
