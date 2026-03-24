@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -47,6 +47,7 @@ export default function Pipeline() {
   const { data: uploads = [] } = useUploads();
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
 
   // Keep selectedDeal in sync with live query data
   const selectedDeal = useMemo(
@@ -135,14 +136,20 @@ export default function Pipeline() {
   }, [user, newLead, uploads, queryClient]);
 
   const filteredDeals = useMemo(() => {
-    if (!search.trim()) return deals;
-    const q = search.toLowerCase();
-    return deals.filter((d) => {
-      const name = [d.first_name, d.last_name].filter(Boolean).join(' ').toLowerCase();
-      const company = (d.company || '').toLowerCase();
-      return name.includes(q) || company.includes(q);
-    });
-  }, [deals, search]);
+    let result = deals;
+    if (ownerFilter !== 'all') {
+      result = result.filter((d) => (d.prospect_owner || '').toLowerCase().includes(ownerFilter.toLowerCase()));
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((d) => {
+        const name = [d.first_name, d.last_name].filter(Boolean).join(' ').toLowerCase();
+        const company = (d.company || '').toLowerCase();
+        return name.includes(q) || company.includes(q);
+      });
+    }
+    return result;
+  }, [deals, search, ownerFilter]);
 
   const columns = useMemo(() => {
     const grouped: Record<string, typeof filteredDeals> = {};
@@ -253,6 +260,18 @@ export default function Pipeline() {
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
+            <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+              <SelectTrigger className="h-9 w-40 bg-secondary/60 border-border/40 text-sm">
+                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                <SelectValue placeholder="All owners" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All owners</SelectItem>
+                <SelectItem value="Alvaro">Alvaro</SelectItem>
+                <SelectItem value="Andre">Andre</SelectItem>
+                <SelectItem value="Samori">Samori</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
