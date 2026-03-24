@@ -115,9 +115,9 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
   const updateDeal = useUpdateDeal();
   const queryClient = useQueryClient();
 
-  // Get all distinct verticals from existing deals
-  const { data: allDeals = [] } = useQuery({
-    queryKey: ['all-deals'],
+  // Get all distinct verticals from existing deals (use separate query key to avoid overwriting main deals cache)
+  const { data: verticalData = [] } = useQuery({
+    queryKey: ['distinct-verticals'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('deals')
@@ -129,12 +129,12 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
   });
 
   const allVerticals = useMemo(() => {
-    const fromDeals = allDeals
+    const fromDeals = verticalData
       .flatMap((d: any) => (d.company_vertical || '').split(',').map((s: string) => s.trim()))
       .filter((s: string) => s.length > 0);
     const combined = new Set([...KNOWN_VERTICAL_OPTIONS, ...fromDeals]);
     return [...combined].sort();
-  }, [allDeals]);
+  }, [verticalData]);
 
   // Parse current value (comma-separated) into array
   const selected = useMemo(() => {
@@ -149,7 +149,7 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
     const newValue = next.join(', ') || null;
     try {
       await updateDeal.mutateAsync({ dealId: deal.id, updates: { company_vertical: newValue } });
-      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+      queryClient.invalidateQueries({ queryKey: ['distinct-verticals'] });
     } catch {
       toast.error('Failed to update vertical');
     }
