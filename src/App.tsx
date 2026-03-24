@@ -12,6 +12,8 @@ import LeadGen from "./pages/agents/LeadGen";
 import PipelineAgent from "./pages/agents/PipelineAgent";
 import CrmAgent from "./pages/agents/CrmAgent";
 import SocialAgent from "./pages/agents/SocialAgent";
+import OpenClaw from "./pages/agents/OpenClaw";
+import OpenClawConfig from "./pages/agents/OpenClawConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/agents/pipeline" element={<PipelineAgent />} />
             <Route path="/agents/crm" element={<CrmAgent />} />
             <Route path="/agents/social" element={<SocialAgent />} />
+            <Route path="/agents/openclaw" element={<OpenClaw />} />
+            <Route path="/agents/openclaw/config" element={<OpenClawConfig />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

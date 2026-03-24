@@ -5,7 +5,9 @@ export interface ToolCall {
   arguments: Record<string, unknown>;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
+const BASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const CHAT_URL = `${BASE_URL}/functions/v1/agent-chat`;
+const OPENCLAW_URL = `${BASE_URL}/functions/v1/openclaw-chat`;
 
 export async function streamAgentChat({
   agentType,
@@ -24,13 +26,19 @@ export async function streamAgentChat({
   onDone: () => void;
   onError?: (error: string) => void;
 }) {
-  const resp = await fetch(CHAT_URL, {
+  const isOpenClaw = agentType === "openclaw";
+  const url = isOpenClaw ? OPENCLAW_URL : CHAT_URL;
+  const payload = isOpenClaw
+    ? { messages, botConfigId: context?.botConfigId }
+    : { agentType, messages, context };
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ agentType, messages, context }),
+    body: JSON.stringify(payload),
   });
 
   if (!resp.ok) {
