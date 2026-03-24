@@ -335,7 +335,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, processed, matched, unmatched }),
+      JSON.stringify({ success: true, processed, matched }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
