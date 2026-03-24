@@ -129,6 +129,32 @@ export default function Pipeline() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => {
+                const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
+                const rows = deals.map(d => [
+                  d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, d.status, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
+                ].map(v => {
+                  if (v == null) return '';
+                  const s = String(v);
+                  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+                }).join(','));
+                const csv = [headers.join(','), ...rows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pipeline-export-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
