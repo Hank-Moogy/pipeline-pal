@@ -300,9 +300,6 @@ serve(async (req) => {
         } else {
           matched++;
         }
-      } else {
-        console.log(`No deal match for transcript: company="${extracted.company}", attendees=${JSON.stringify(extracted.attendees)}`);
-        unmatched++;
       }
 
       processed++;
