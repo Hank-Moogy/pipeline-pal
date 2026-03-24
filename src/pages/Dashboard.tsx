@@ -16,7 +16,6 @@ function fmtCurrency(n: number) {
 }
 
 export default function Dashboard() {
-  const { } = useAuth();
   const { data: uploads = [] } = useUploads();
   const { data: allDeals = [] } = useAllDeals();
 
