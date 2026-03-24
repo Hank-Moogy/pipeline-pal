@@ -8,7 +8,8 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { WeekSelector } from '@/components/WeekSelector';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot, Upload } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 
