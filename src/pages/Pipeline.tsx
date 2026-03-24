@@ -260,6 +260,18 @@ export default function Pipeline() {
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
+            <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+              <SelectTrigger className="h-9 w-40 bg-secondary/60 border-border/40 text-sm">
+                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                <SelectValue placeholder="All owners" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All owners</SelectItem>
+                <SelectItem value="Alvaro">Alvaro</SelectItem>
+                <SelectItem value="Andre">Andre</SelectItem>
+                <SelectItem value="Samori">Samori</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
