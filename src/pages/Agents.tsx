@@ -134,6 +134,6 @@ export default function Agents() {
           ))}
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }
