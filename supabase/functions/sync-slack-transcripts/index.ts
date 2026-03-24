@@ -138,7 +138,7 @@ serve(async (req) => {
 
     let processed = 0;
     let matched = 0;
-    let unmatched = 0;
+    
     let latestTs = lastSyncedTs;
 
     for (const msg of messages) {
