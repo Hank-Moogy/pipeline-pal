@@ -26,12 +26,12 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
 import { DealContactsTab, useDealContacts } from '@/components/DealContactsTab';
 
-interface Props {
-
 function decodeHtmlEntities(text: string) {
   return text.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
 }
+
+interface Props {
   deal: Deal | null;
   open: boolean;
   onClose: () => void;
