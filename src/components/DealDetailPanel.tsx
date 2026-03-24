@@ -149,7 +149,7 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
     const newValue = next.join(', ') || null;
     try {
       await updateDeal.mutateAsync({ dealId: deal.id, updates: { company_vertical: newValue } });
-      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+      queryClient.invalidateQueries({ queryKey: ['distinct-verticals'] });
     } catch {
       toast.error('Failed to update vertical');
     }
