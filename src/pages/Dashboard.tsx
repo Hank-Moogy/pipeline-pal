@@ -98,12 +98,6 @@ export default function Dashboard() {
               <CsvUpload />
             </DialogContent>
           </Dialog>
-          <WeekSelector
-            uploads={uploads}
-            selected={compareUploadId}
-            onSelect={setCompareUploadId}
-            label="Compare With (WoW)"
-          />
         </div>
 
         {/* Summary cards */}
