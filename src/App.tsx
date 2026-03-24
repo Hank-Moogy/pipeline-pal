@@ -12,6 +12,8 @@ import LeadGen from "./pages/agents/LeadGen";
 import PipelineAgent from "./pages/agents/PipelineAgent";
 import CrmAgent from "./pages/agents/CrmAgent";
 import SocialAgent from "./pages/agents/SocialAgent";
+import OpenClaw from "./pages/agents/OpenClaw";
+import OpenClawConfig from "./pages/agents/OpenClawConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
