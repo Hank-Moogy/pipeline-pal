@@ -200,8 +200,7 @@ function EditableNextSteps({ deal }: { deal: Deal }) {
   );
 }
 
-function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
-  const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
+function OwnerSelect({ deal }: { deal: Deal }) {
   const updateDeal = useUpdateDeal();
 
   const handleChange = async (value: string) => {
@@ -223,7 +222,7 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
             <SelectValue placeholder="Select owner…" />
           </SelectTrigger>
           <SelectContent>
-            {owners.map((o) => (
+            {OWNER_OPTIONS.map((o) => (
               <SelectItem key={o} value={o}>{o}</SelectItem>
             ))}
           </SelectContent>
