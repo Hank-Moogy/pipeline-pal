@@ -346,7 +346,7 @@ export default function Pipeline() {
       <DealDetailPanel
         deal={selectedDeal}
         open={!!selectedDeal}
-        onClose={() => setSelectedDeal(null)}
+        onClose={() => setSelectedDealId(null)}
         uploadId={null}
       />
 
