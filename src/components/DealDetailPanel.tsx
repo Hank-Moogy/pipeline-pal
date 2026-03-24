@@ -246,7 +246,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
         <EditableField icon={Building2} label="Company" value={deal.company} fieldName="company" dealId={deal.id} />
-        <EditableField label="Vertical" value={deal.company_vertical} fieldName="company_vertical" dealId={deal.id} />
+        <VerticalMultiSelect deal={deal} />
         <EditableField label="Size" value={deal.company_size} fieldName="company_size" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
