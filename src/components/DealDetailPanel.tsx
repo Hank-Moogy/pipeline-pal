@@ -129,12 +129,12 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
   });
 
   const allVerticals = useMemo(() => {
-    const fromDeals = allDeals
+    const fromDeals = verticalData
       .flatMap((d: any) => (d.company_vertical || '').split(',').map((s: string) => s.trim()))
       .filter((s: string) => s.length > 0);
     const combined = new Set([...KNOWN_VERTICAL_OPTIONS, ...fromDeals]);
     return [...combined].sort();
-  }, [allDeals]);
+  }, [verticalData]);
 
   // Parse current value (comma-separated) into array
   const selected = useMemo(() => {
