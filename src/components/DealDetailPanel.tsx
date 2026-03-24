@@ -109,11 +109,12 @@ function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'te
     </div>
   );
 }
-const KNOWN_VERTICAL_OPTIONS = ['VFX', 'Animation', 'Gaming', 'Film', 'Broadcast', 'Advertising', 'Architecture', 'Education', 'Post Production', 'Immersive', 'Automotive', 'Design'];
+const DEFAULT_VERTICAL_OPTIONS = ['VFX', 'Animation', 'TV', 'Advertisement'];
 
 function VerticalMultiSelect({ deal }: { deal: Deal }) {
   const updateDeal = useUpdateDeal();
   const queryClient = useQueryClient();
+  const [newVertical, setNewVertical] = useState('');
 
   // Get all distinct verticals from existing deals (use separate query key to avoid overwriting main deals cache)
   const { data: verticalData = [] } = useQuery({
@@ -132,7 +133,7 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
     const fromDeals = verticalData
       .flatMap((d: any) => (d.company_vertical || '').split(',').map((s: string) => s.trim()))
       .filter((s: string) => s.length > 0);
-    const combined = new Set([...KNOWN_VERTICAL_OPTIONS, ...fromDeals]);
+    const combined = new Set([...DEFAULT_VERTICAL_OPTIONS, ...fromDeals]);
     return [...combined].sort();
   }, [verticalData]);
 
@@ -155,6 +156,31 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
     }
   };
 
+  const addCustomVertical = async () => {
+    const trimmed = newVertical.trim();
+    if (!trimmed) return;
+    // Check if already exists (case-insensitive)
+    if (allVerticals.some((v) => v.toLowerCase() === trimmed.toLowerCase())) {
+      // Just toggle it on if not selected
+      const existing = allVerticals.find((v) => v.toLowerCase() === trimmed.toLowerCase())!;
+      if (!selected.includes(existing)) {
+        await toggle(existing);
+      }
+      setNewVertical('');
+      return;
+    }
+    // Add as new vertical and select it
+    const next = [...selected, trimmed];
+    const newValue = next.join(', ');
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { company_vertical: newValue } });
+      queryClient.invalidateQueries({ queryKey: ['distinct-verticals'] });
+      setNewVertical('');
+    } catch {
+      toast.error('Failed to add vertical');
+    }
+  };
+
   return (
     <div className="flex items-start gap-3 py-2.5">
       <div className="w-4" />
@@ -170,20 +196,31 @@ function VerticalMultiSelect({ deal }: { deal: Deal }) {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-2" align="start">
-            <ScrollArea className="max-h-56">
-              <div className="space-y-0.5">
-                {allVerticals.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => toggle(v)}
-                    className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
-                  >
-                    <Checkbox checked={selected.includes(v)} className="pointer-events-none" />
-                    <span>{v}</span>
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
+            <div className="max-h-48 overflow-y-auto space-y-0.5">
+              {allVerticals.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => toggle(v)}
+                  className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
+                >
+                  <Checkbox checked={selected.includes(v)} className="pointer-events-none" />
+                  <span>{v}</span>
+                </button>
+              ))}
+            </div>
+            <Separator className="my-1.5" />
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={newVertical}
+                onChange={(e) => setNewVertical(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomVertical()}
+                placeholder="Add new…"
+                className="h-7 text-xs"
+              />
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" onClick={addCustomVertical} disabled={!newVertical.trim()}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
