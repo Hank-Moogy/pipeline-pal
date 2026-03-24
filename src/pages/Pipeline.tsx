@@ -136,14 +136,20 @@ export default function Pipeline() {
   }, [user, newLead, uploads, queryClient]);
 
   const filteredDeals = useMemo(() => {
-    if (!search.trim()) return deals;
-    const q = search.toLowerCase();
-    return deals.filter((d) => {
-      const name = [d.first_name, d.last_name].filter(Boolean).join(' ').toLowerCase();
-      const company = (d.company || '').toLowerCase();
-      return name.includes(q) || company.includes(q);
-    });
-  }, [deals, search]);
+    let result = deals;
+    if (ownerFilter !== 'all') {
+      result = result.filter((d) => (d.prospect_owner || '').toLowerCase().includes(ownerFilter.toLowerCase()));
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((d) => {
+        const name = [d.first_name, d.last_name].filter(Boolean).join(' ').toLowerCase();
+        const company = (d.company || '').toLowerCase();
+        return name.includes(q) || company.includes(q);
+      });
+    }
+    return result;
+  }, [deals, search, ownerFilter]);
 
   const columns = useMemo(() => {
     const grouped: Record<string, typeof filteredDeals> = {};
