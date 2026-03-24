@@ -107,6 +107,87 @@ function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'te
     </div>
   );
 }
+const KNOWN_VERTICAL_OPTIONS = ['VFX', 'Animation', 'Gaming', 'Film', 'Broadcast', 'Advertising', 'Architecture', 'Education', 'Post Production', 'Immersive', 'Automotive', 'Design'];
+
+function VerticalMultiSelect({ deal }: { deal: Deal }) {
+  const updateDeal = useUpdateDeal();
+  const queryClient = useQueryClient();
+
+  // Get all distinct verticals from existing deals
+  const { data: allDeals = [] } = useQuery({
+    queryKey: ['all-deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('company_vertical');
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
+  const allVerticals = useMemo(() => {
+    const fromDeals = allDeals
+      .flatMap((d: any) => (d.company_vertical || '').split(',').map((s: string) => s.trim()))
+      .filter((s: string) => s.length > 0);
+    const combined = new Set([...KNOWN_VERTICAL_OPTIONS, ...fromDeals]);
+    return [...combined].sort();
+  }, [allDeals]);
+
+  // Parse current value (comma-separated) into array
+  const selected = useMemo(() => {
+    if (!deal.company_vertical) return [] as string[];
+    return deal.company_vertical.split(',').map((s) => s.trim()).filter(Boolean);
+  }, [deal.company_vertical]);
+
+  const toggle = async (vertical: string) => {
+    const next = selected.includes(vertical)
+      ? selected.filter((v) => v !== vertical)
+      : [...selected, vertical];
+    const newValue = next.join(', ') || null;
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { company_vertical: newValue } });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+    } catch {
+      toast.error('Failed to update vertical');
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <div className="w-4" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1.5">Vertical</p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full justify-between text-sm bg-secondary/40 border-border/40 font-normal">
+              <span className="truncate">
+                {selected.length > 0 ? selected.join(', ') : <span className="text-muted-foreground/50 italic">Select verticals…</span>}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 ml-1 shrink-0 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2" align="start">
+            <ScrollArea className="max-h-56">
+              <div className="space-y-0.5">
+                {allVerticals.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => toggle(v)}
+                    className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
+                  >
+                    <Checkbox checked={selected.includes(v)} className="pointer-events-none" />
+                    <span>{v}</span>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}
 
 
 function EditableNextSteps({ deal }: { deal: Deal }) {
