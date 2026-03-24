@@ -138,7 +138,7 @@ serve(async (req) => {
 
     let processed = 0;
     let matched = 0;
-    let unmatched = 0;
+    
     let latestTs = lastSyncedTs;
 
     for (const msg of messages) {
@@ -300,9 +300,6 @@ serve(async (req) => {
         } else {
           matched++;
         }
-      } else {
-        console.log(`No deal match for transcript: company="${extracted.company}", attendees=${JSON.stringify(extracted.attendees)}`);
-        unmatched++;
       }
 
       processed++;
@@ -338,7 +335,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, processed, matched, unmatched }),
+      JSON.stringify({ success: true, processed, matched }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
