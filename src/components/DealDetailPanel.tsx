@@ -232,65 +232,70 @@ function OwnerSelect({ deal }: { deal: Deal }) {
   );
 }
 
-function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
-  const navigate = useNavigate();
-  const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
+function StatusSelect({ deal }: { deal: Deal }) {
+  const updateDeal = useUpdateDeal();
+  const handleChange = async (value: string) => {
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { status: value } });
+      toast.success('Status updated');
+    } catch { toast.error('Failed to update status'); }
+  };
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <div className="w-4" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1">Status</p>
+        <Select value={deal.status} onValueChange={handleChange}>
+          <SelectTrigger className="h-8 text-sm bg-secondary/40 border-border/40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STAGE_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function DetailsTab({ deal }: { deal: Deal }) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-1 pb-6 pr-1">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Contact</p>
-        <Field icon={User} label="Name" value={name} />
-        <Field icon={Briefcase} label="Job Title" value={deal.job_title} />
-        <Field icon={Mail} label="Email" value={
-          deal.email ? <a href={`mailto:${deal.email}`} className="text-primary hover:underline">{deal.email}</a> : null
-        } />
-        <Field icon={Phone} label="Phone" value={
-          deal.phone ? <a href={`tel:${deal.phone}`} className="text-primary hover:underline">{deal.phone}</a> : null
-        } />
-        <Field icon={Link2} label="LinkedIn" value={
-          deal.linkedin_url ? <a href={deal.linkedin_url.startsWith('http') ? deal.linkedin_url : `https://${deal.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">{deal.linkedin_url.replace(/https?:\/\/(www\.)?/, '')}</a> : null
-        } />
-        <Field icon={MapPin} label="Country" value={deal.country} />
-        {deal.address && <Field label="Address" value={deal.address} />}
-        {deal.description && <CollapsibleDescription text={deal.description} />}
+        <EditableField icon={User} label="First Name" value={deal.first_name} fieldName="first_name" dealId={deal.id} />
+        <EditableField icon={User} label="Last Name" value={deal.last_name} fieldName="last_name" dealId={deal.id} />
+        <EditableField icon={Briefcase} label="Job Title" value={deal.job_title} fieldName="job_title" dealId={deal.id} />
+        <EditableField icon={Mail} label="Email" value={deal.email} fieldName="email" dealId={deal.id} />
+        <EditableField icon={Phone} label="Phone" value={deal.phone} fieldName="phone" dealId={deal.id} />
+        <EditableField icon={Link2} label="LinkedIn" value={deal.linkedin_url} fieldName="linkedin_url" dealId={deal.id} />
+        <EditableField icon={MapPin} label="Country" value={deal.country} fieldName="country" dealId={deal.id} />
+        <EditableField label="Address" value={deal.address} fieldName="address" dealId={deal.id} />
+        <EditableField label="Description" value={deal.description} fieldName="description" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
-        <Field icon={Building2} label="Company" value={deal.company} />
-        <Field label="Vertical" value={
-          deal.company_vertical ? (() => {
-            const vc = getVerticalColors(deal.company_vertical);
-            return (
-              <Badge variant="outline" className={`text-[11px] font-medium ${vc.bg} ${vc.text} ${vc.border}`}>
-                {deal.company_vertical}
-              </Badge>
-            );
-          })() : null
-        } />
-        <Field label="Size" value={deal.company_size} />
+        <EditableField icon={Building2} label="Company" value={deal.company} fieldName="company" dealId={deal.id} />
+        <EditableField label="Vertical" value={deal.company_vertical} fieldName="company_vertical" dealId={deal.id} />
+        <EditableField label="Size" value={deal.company_size} fieldName="company_size" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Deal</p>
-        <Field icon={DollarSign} label="Deal Value" value={deal.deal_value ? fmtCurrency(deal.deal_value) : null} />
-        <Field label="Actual ACV" value={deal.actual_acv ? fmtCurrency(deal.actual_acv) : null} />
+        <StatusSelect deal={deal} />
+        <EditableField icon={DollarSign} label="Deal Value" value={deal.deal_value} fieldName="deal_value" dealId={deal.id} type="number" />
+        <EditableField label="Actual ACV" value={deal.actual_acv} fieldName="actual_acv" dealId={deal.id} type="number" />
         <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
-        <Field label="Closed Date" value={fmtDate(deal.closed_date)} />
-        <OwnerSelect deal={deal} uploadId={uploadId} />
+        <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
+        <OwnerSelect deal={deal} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
         <EditableNextSteps deal={deal} />
 
-        {deal.lost_reason && (
-          <>
-            <Separator className="my-3 bg-border/30" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Lost Reason</p>
-            <div className="flex items-start gap-3 py-2.5">
-              <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
-              <p className="text-sm text-destructive leading-relaxed">{deal.lost_reason}</p>
-            </div>
-          </>
-        )}
+        <EditableField icon={AlertTriangle} label="Lost Reason" value={deal.lost_reason} fieldName="lost_reason" dealId={deal.id} />
+        <EditableField label="Strongest Connection" value={deal.strongest_connection} fieldName="strongest_connection" dealId={deal.id} />
       </div>
     </ScrollArea>
   );
