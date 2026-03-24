@@ -33,6 +33,8 @@ const App = () => (
             <Route path="/agents/pipeline" element={<PipelineAgent />} />
             <Route path="/agents/crm" element={<CrmAgent />} />
             <Route path="/agents/social" element={<SocialAgent />} />
+            <Route path="/agents/openclaw" element={<OpenClaw />} />
+            <Route path="/agents/openclaw/config" element={<OpenClawConfig />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
