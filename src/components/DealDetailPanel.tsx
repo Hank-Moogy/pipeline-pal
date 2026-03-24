@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getVerticalColors } from '@/lib/vertical-colors';
+import { STAGE_ORDER } from '@/lib/constants';
 import { useGmailConnection } from '@/hooks/useGmailConnection';
 import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
