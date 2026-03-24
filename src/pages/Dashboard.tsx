@@ -84,18 +84,27 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         {/* Upload + WoW comparison selector */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <CsvUpload />
-          <div className="flex flex-col justify-end gap-4 lg:col-span-2">
-            <div className="flex flex-wrap gap-4">
-              <WeekSelector
-                uploads={uploads}
-                selected={compareUploadId}
-                onSelect={setCompareUploadId}
-                label="Compare With (WoW)"
-              />
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Upload Weekly CSV</DialogTitle>
+              </DialogHeader>
+              <CsvUpload />
+            </DialogContent>
+          </Dialog>
+          <WeekSelector
+            uploads={uploads}
+            selected={compareUploadId}
+            onSelect={setCompareUploadId}
+            label="Compare With (WoW)"
+          />
         </div>
 
         {/* Summary cards */}
