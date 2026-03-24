@@ -123,12 +123,12 @@ export default function Agents() {
         <Link to="/agents/openclaw">
           <Card className="mb-6 hover:border-primary/30 transition-all hover:shadow-lg group cursor-pointer border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-xl">
+                  {botEmoji}
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-lg">ClawBot</CardTitle>
+                  <CardTitle className="text-lg">{botName}</CardTitle>
                   <CardDescription className="text-xs mt-0.5">Your AI sales assistant with full pipeline access, memory, and configurable personality.</CardDescription>
                 </div>
                 <div className="flex items-center gap-1">
