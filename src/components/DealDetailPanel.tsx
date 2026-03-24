@@ -712,7 +712,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
-            <DetailsTab deal={deal} uploadId={uploadId} />
+            <DetailsTab deal={deal} />
           </TabsContent>
           <TabsContent value="people" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DealContactsTab dealId={deal.id} deal={deal} />
