@@ -47,6 +47,7 @@ export default function Pipeline() {
   const { data: uploads = [] } = useUploads();
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
 
   // Keep selectedDeal in sync with live query data
   const selectedDeal = useMemo(
