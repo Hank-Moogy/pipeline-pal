@@ -108,36 +108,6 @@ function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'te
   );
 }
 
-function CollapsibleDescription({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  // Parse into paragraphs, clean up whitespace
-  const paragraphs = text.split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean);
-  const preview = paragraphs[0] || '';
-  const isLong = paragraphs.length > 1 || preview.length > 120;
-
-  return (
-    <div className="flex items-start gap-3 py-2.5">
-      <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">Description</p>
-        <div className={`text-sm text-foreground leading-relaxed ${!open && isLong ? 'line-clamp-2' : ''}`}>
-          {paragraphs.map((p, i) => (
-            <p key={i} className={i > 0 ? 'mt-1.5' : ''}>{p}</p>
-          ))}
-        </div>
-        {isLong && (
-          <button
-            onClick={() => setOpen(!open)}
-            className="text-[11px] text-primary hover:underline mt-1 flex items-center gap-0.5"
-          >
-            <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
-            {open ? 'Show less' : 'Show more'}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function EditableNextSteps({ deal }: { deal: Deal }) {
   const [editing, setEditing] = useState(false);
