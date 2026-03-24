@@ -5,7 +5,9 @@ export interface ToolCall {
   arguments: Record<string, unknown>;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
+const BASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const CHAT_URL = `${BASE_URL}/functions/v1/agent-chat`;
+const OPENCLAW_URL = `${BASE_URL}/functions/v1/openclaw-chat`;
 
 export async function streamAgentChat({
   agentType,
