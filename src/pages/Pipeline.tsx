@@ -15,8 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Link } from 'react-router-dom';
+import { AppLayout } from '@/components/AppLayout';
 import { toast } from 'sonner';
 
 const COLUMN_COLORS: Record<string, string> = {
