@@ -30,9 +30,6 @@ interface Props {
   uploadId?: string | null;
 }
 
-function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-}
 
 function fmtDate(d: string | null) {
   if (!d) return null;
