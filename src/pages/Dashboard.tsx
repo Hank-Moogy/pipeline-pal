@@ -129,7 +129,7 @@ export default function Dashboard() {
             </p>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
