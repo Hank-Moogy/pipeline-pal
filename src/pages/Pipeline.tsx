@@ -100,6 +100,23 @@ export default function Pipeline() {
 
       if (error) throw error;
 
+      // Optimistically add the deal to the cache so it appears instantly
+      queryClient.setQueryData(['all-deals'], (old: typeof deals | undefined) => [
+        {
+          id: crypto.randomUUID(),
+          upload_id: uploadId,
+          first_name: newLead.first_name.trim(),
+          last_name: newLead.last_name.trim(),
+          company: newLead.company.trim(),
+          job_title: newLead.job_title.trim(),
+          email: newLead.email.trim(),
+          deal_value: parseFloat(newLead.deal_value) || 0,
+          status: newLead.status,
+          created_at: new Date().toISOString(),
+        } as any,
+        ...(old || []),
+      ]);
+      // Then refetch to get the real server data
       queryClient.invalidateQueries({ queryKey: ['all-deals'] });
       toast.success('Lead added');
       setAddLeadOpen(false);
