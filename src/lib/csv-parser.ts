@@ -56,6 +56,19 @@ export interface ParsedDeal {
   strongest_connection: string;
 }
 
+export interface ParsedNote {
+  contact_id: string;
+  contact_name: string;
+  note_id: string;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export type CsvParseResult =
+  | { type: 'people'; deals: ParsedDeal[] }
+  | { type: 'notes'; notes: ParsedNote[] };
+
 function extractLinkedIn(urls: string): string {
   if (!urls) return '';
   const parts = urls.split(',');
@@ -63,38 +76,63 @@ function extractLinkedIn(urls: string): string {
   return li?.trim() || '';
 }
 
-export function parseCsvFile(file: File): Promise<ParsedDeal[]> {
+function detectCsvType(headers: string[]): 'people' | 'notes' {
+  const lower = headers.map((h) => h.toLowerCase().trim());
+  if (lower.includes('notecontent') || lower.includes('noteid')) {
+    return 'notes';
+  }
+  return 'people';
+}
+
+export function parseCsvFile(file: File): Promise<CsvParseResult> {
   return new Promise((resolve, reject) => {
-    Papa.parse<RawCsvRow>(file, {
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete(results) {
-        const deals: ParsedDeal[] = results.data.map((row) => ({
-          external_id: row.id || '',
-          first_name: row.firstname || '',
-          last_name: row.lastname || '',
-          company: (row.companies || '').split(',')[0]?.trim() || '',
-          job_title: row.jobTitle || '',
-          status: (row.Status || '').trim(),
-          deal_value: parseFloat(row['Deal value']) || 0,
-          actual_acv: parseFloat(row['Actual ACV']) || 0,
-          company_size: row['Company size'] || '',
-          company_vertical: row['Company vertical'] || '',
-          prospect_owner: row['Prospect owner'] || '',
-          country: row.Where || '',
-          next_steps: row['Next steps'] || '',
-          closed_date: row['Closed date'] || null,
-          lost_reason: row['Lost reason'] || '',
-          last_interaction: row.lastInteraction || null,
-          email: row.favoriteEmail || row.emails?.split(',')[0]?.trim() || '',
-          phone: row.favoritePhone || row.phones?.split(',')[0]?.trim() || '',
-          linkedin_url: extractLinkedIn(row.urls || row.favoriteUrl || ''),
-          address: row.favoriteAddress || row.addresses?.split(',')[0]?.trim() || '',
-          description: row.description || '',
-          nb_interactions: parseInt(row.nbInteractions) || 0,
-          strongest_connection: row.strongestConnection || '',
-        }));
-        resolve(deals);
+        const headers = results.meta.fields || [];
+        const csvType = detectCsvType(headers);
+
+        if (csvType === 'notes') {
+          const notes: ParsedNote[] = (results.data as any[])
+            .filter((row) => row.noteContent?.trim())
+            .map((row) => ({
+              contact_id: row.contactId || '',
+              contact_name: row.contactName || '',
+              note_id: row.noteId || '',
+              author: row.author || '',
+              content: row.noteContent || '',
+              created_at: row.createdAt || '',
+            }));
+          resolve({ type: 'notes', notes });
+        } else {
+          const deals: ParsedDeal[] = (results.data as RawCsvRow[]).map((row) => ({
+            external_id: row.id || '',
+            first_name: row.firstname || '',
+            last_name: row.lastname || '',
+            company: (row.companies || '').split(',')[0]?.trim() || '',
+            job_title: row.jobTitle || '',
+            status: (row.Status || '').trim(),
+            deal_value: parseFloat(row['Deal value']) || 0,
+            actual_acv: parseFloat(row['Actual ACV']) || 0,
+            company_size: row['Company size'] || '',
+            company_vertical: row['Company vertical'] || '',
+            prospect_owner: row['Prospect owner'] || '',
+            country: row.Where || '',
+            next_steps: row['Next steps'] || '',
+            closed_date: row['Closed date'] || null,
+            lost_reason: row['Lost reason'] || '',
+            last_interaction: row.lastInteraction || null,
+            email: row.favoriteEmail || row.emails?.split(',')[0]?.trim() || '',
+            phone: row.favoritePhone || row.phones?.split(',')[0]?.trim() || '',
+            linkedin_url: extractLinkedIn(row.urls || row.favoriteUrl || ''),
+            address: row.favoriteAddress || row.addresses?.split(',')[0]?.trim() || '',
+            description: row.description || '',
+            nb_interactions: parseInt(row.nbInteractions) || 0,
+            strongest_connection: row.strongestConnection || '',
+          }));
+          resolve({ type: 'people', deals });
+        }
       },
       error(err) {
         reject(err);
