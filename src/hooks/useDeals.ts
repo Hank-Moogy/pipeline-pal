@@ -55,6 +55,23 @@ export function useDealsForUpload(uploadId: string | null) {
   });
 }
 
+export function usePipelineSnapshot(uploadDate: string | null) {
+  return useQuery({
+    queryKey: ['pipeline-snapshot', uploadDate],
+    queryFn: async () => {
+      if (!uploadDate) return [];
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*, uploads!inner(user_id)')
+        .lte('created_at', uploadDate)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data.map(({ uploads, ...deal }) => deal);
+    },
+    enabled: !!uploadDate,
+  });
+}
+
 export interface DealNote {
   id: string;
   deal_id: string;

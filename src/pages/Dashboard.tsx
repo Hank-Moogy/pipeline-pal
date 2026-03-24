@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useUploads, useDealsForUpload, useAllDeals } from '@/hooks/useDeals';
+import { useUploads, useAllDeals, usePipelineSnapshot } from '@/hooks/useDeals';
 import { computeMetrics, computeWow } from '@/lib/metrics';
 import { CsvUpload } from '@/components/CsvUpload';
 import { MetricCard } from '@/components/MetricCard';
@@ -21,22 +21,15 @@ export default function Dashboard() {
   const { data: uploads = [] } = useUploads();
   const { data: allDeals = [] } = useAllDeals();
 
-  const [compareUploadId, setCompareUploadId] = useState<string | null>(null);
-
-  // Auto-select previous upload for WoW
-  useEffect(() => {
-    if (uploads.length > 1 && !compareUploadId) {
-      setCompareUploadId(uploads[1].id);
-    }
-  }, [uploads, compareUploadId]);
-
-  const { data: compareDeals = [] } = useDealsForUpload(compareUploadId);
+  // Auto-select previous upload for WoW comparison
+  const compareUpload = uploads.length > 1 ? uploads[1] : null;
+  const { data: compareDeals = [] } = usePipelineSnapshot(compareUpload?.created_at || null);
 
   // Primary metrics from live pipeline
   const currentMetrics = useMemo(() => computeMetrics(allDeals), [allDeals]);
   const compareMetrics = useMemo(() => computeMetrics(compareDeals), [compareDeals]);
 
-  const hasCompare = compareUploadId && compareDeals.length > 0;
+  const hasCompare = compareUpload && compareDeals.length > 0;
 
   const wowDeals = hasCompare ? computeWow(currentMetrics.totalDeals, compareMetrics.totalDeals) : null;
   const wowPipeline = hasCompare ? computeWow(currentMetrics.totalPipelineValue, compareMetrics.totalPipelineValue) : null;
