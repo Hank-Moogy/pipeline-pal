@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
