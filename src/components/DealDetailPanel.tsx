@@ -145,7 +145,7 @@ function DealValueSelect({ deal }: { deal: Deal }) {
   };
 
   const fmtVal = (n: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
   return (
     <div className="flex items-start gap-3 py-2.5">

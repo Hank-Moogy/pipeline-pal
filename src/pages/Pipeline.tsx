@@ -32,9 +32,9 @@ const COLUMN_COLORS: Record<string, string> = {
 };
 
 function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('de-DE', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(n);
 }
