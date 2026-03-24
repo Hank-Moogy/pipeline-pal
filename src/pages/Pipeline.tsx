@@ -45,8 +45,14 @@ export default function Pipeline() {
   const queryClient = useQueryClient();
   const { data: deals = [] } = useAllDeals();
   const { data: uploads = [] } = useUploads();
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+
+  // Keep selectedDeal in sync with live query data
+  const selectedDeal = useMemo(
+    () => (selectedDealId ? deals.find((d) => d.id === selectedDealId) ?? null : null),
+    [selectedDealId, deals],
+  );
 
   // Add lead dialog state
   const [addLeadOpen, setAddLeadOpen] = useState(false);
@@ -315,7 +321,7 @@ export default function Pipeline() {
                                   {...dragProvided.dragHandleProps}
                                   className={dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}
                                 >
-                                  <DealCard deal={deal} onClick={setSelectedDeal} />
+                                  <DealCard deal={deal} onClick={(d) => setSelectedDealId(d.id)} />
                                 </div>
                               )}
                             </Draggable>
@@ -340,7 +346,7 @@ export default function Pipeline() {
       <DealDetailPanel
         deal={selectedDeal}
         open={!!selectedDeal}
-        onClose={() => setSelectedDeal(null)}
+        onClose={() => setSelectedDealId(null)}
         uploadId={null}
       />
 
