@@ -43,7 +43,7 @@ const AGENTS = [
 ];
 
 export default function Agents() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
 
   const { data: botConfig } = useQuery({
     queryKey: ['bot-config-name', user?.id],
