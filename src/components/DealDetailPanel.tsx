@@ -12,11 +12,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, User, Users, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useNotesForDeal, useAddNote, useUpdateDeal, useDistinctOwners } from '@/hooks/useDeals';
+import { useNotesForDeal, useAddNote, useUpdateDeal } from '@/hooks/useDeals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getVerticalColors } from '@/lib/vertical-colors';
+import { STAGE_ORDER } from '@/lib/constants';
 import { useGmailConnection } from '@/hooks/useGmailConnection';
 import { useAuth } from '@/hooks/useAuth';
 import type { Deal } from '@/components/DealCard';
@@ -29,14 +30,13 @@ interface Props {
   uploadId?: string | null;
 }
 
-function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-}
 
 function fmtDate(d: string | null) {
   if (!d) return null;
   try { return format(new Date(d), 'MMM d, yyyy'); } catch { return d; }
 }
+
+const OWNER_OPTIONS = ['Alvaro', 'Andre', 'Samori'];
 
 function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: string; value: React.ReactNode }) {
   if (!value) return null;
@@ -52,36 +52,62 @@ function Field({ icon: Icon, label, value }: { icon?: React.ElementType; label: 
   );
 }
 
-function CollapsibleDescription({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  // Parse into paragraphs, clean up whitespace
-  const paragraphs = text.split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean);
-  const preview = paragraphs[0] || '';
-  const isLong = paragraphs.length > 1 || preview.length > 120;
+function EditableField({ icon: Icon, label, value, fieldName, dealId, type = 'text' }: {
+  icon?: React.ElementType; label: string; value: string | number | null; fieldName: string; dealId: string; type?: 'text' | 'number';
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(value ?? ''));
+  const updateDeal = useUpdateDeal();
+
+  // Sync when deal changes externally
+  useEffect(() => {
+    if (!editing) setVal(String(value ?? ''));
+  }, [value, editing]);
+
+  const handleSave = async () => {
+    const parsed = type === 'number' ? (val.trim() ? Number(val) : null) : (val.trim() || null);
+    try {
+      await updateDeal.mutateAsync({ dealId, updates: { [fieldName]: parsed } });
+      toast.success(`${label} updated`);
+      setEditing(false);
+    } catch {
+      toast.error(`Failed to update ${label.toLowerCase()}`);
+    }
+  };
 
   return (
     <div className="flex items-start gap-3 py-2.5">
-      <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+      {Icon ? <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" /> : <div className="w-4" />}
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">Description</p>
-        <div className={`text-sm text-foreground leading-relaxed ${!open && isLong ? 'line-clamp-2' : ''}`}>
-          {paragraphs.map((p, i) => (
-            <p key={i} className={i > 0 ? 'mt-1.5' : ''}>{p}</p>
-          ))}
-        </div>
-        {isLong && (
-          <button
-            onClick={() => setOpen(!open)}
-            className="text-[11px] text-primary hover:underline mt-1 flex items-center gap-0.5"
-          >
-            <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
-            {open ? 'Show less' : 'Show more'}
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">{label}</p>
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              type={type}
+              className="h-7 text-sm bg-secondary/40 border-border/40"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setVal(String(value ?? '')); setEditing(false); } }}
+            />
+            <Button size="sm" onClick={handleSave} disabled={updateDeal.isPending} className="h-7 text-xs px-2">
+              {updateDeal.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setVal(String(value ?? '')); setEditing(false); }} className="h-7 text-xs px-2">✕</Button>
+          </div>
+        ) : (
+          <button onClick={() => setEditing(true)} className="w-full text-left group/ef">
+            <p className="text-sm text-foreground break-words">
+              {value ?? <span className="text-muted-foreground/50 italic">Click to add…</span>}
+            </p>
+            <span className="text-[10px] text-muted-foreground/0 group-hover/ef:text-muted-foreground/40 transition-colors">Click to edit</span>
           </button>
         )}
       </div>
     </div>
   );
 }
+
 
 function EditableNextSteps({ deal }: { deal: Deal }) {
   const [editing, setEditing] = useState(false);
@@ -142,8 +168,7 @@ function EditableNextSteps({ deal }: { deal: Deal }) {
   );
 }
 
-function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
-  const { data: owners = [] } = useDistinctOwners(uploadId ?? null);
+function OwnerSelect({ deal }: { deal: Deal }) {
   const updateDeal = useUpdateDeal();
 
   const handleChange = async (value: string) => {
@@ -165,7 +190,7 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
             <SelectValue placeholder="Select owner…" />
           </SelectTrigger>
           <SelectContent>
-            {owners.map((o) => (
+            {OWNER_OPTIONS.map((o) => (
               <SelectItem key={o} value={o}>{o}</SelectItem>
             ))}
           </SelectContent>
@@ -175,65 +200,70 @@ function OwnerSelect({ deal, uploadId }: { deal: Deal; uploadId?: string | null 
   );
 }
 
-function DetailsTab({ deal, uploadId }: { deal: Deal; uploadId?: string | null }) {
-  const navigate = useNavigate();
-  const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
+function StatusSelect({ deal }: { deal: Deal }) {
+  const updateDeal = useUpdateDeal();
+  const handleChange = async (value: string) => {
+    try {
+      await updateDeal.mutateAsync({ dealId: deal.id, updates: { status: value } });
+      toast.success('Status updated');
+    } catch { toast.error('Failed to update status'); }
+  };
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <div className="w-4" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1">Status</p>
+        <Select value={deal.status} onValueChange={handleChange}>
+          <SelectTrigger className="h-8 text-sm bg-secondary/40 border-border/40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STAGE_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function DetailsTab({ deal }: { deal: Deal }) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-1 pb-6 pr-1">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Contact</p>
-        <Field icon={User} label="Name" value={name} />
-        <Field icon={Briefcase} label="Job Title" value={deal.job_title} />
-        <Field icon={Mail} label="Email" value={
-          deal.email ? <a href={`mailto:${deal.email}`} className="text-primary hover:underline">{deal.email}</a> : null
-        } />
-        <Field icon={Phone} label="Phone" value={
-          deal.phone ? <a href={`tel:${deal.phone}`} className="text-primary hover:underline">{deal.phone}</a> : null
-        } />
-        <Field icon={Link2} label="LinkedIn" value={
-          deal.linkedin_url ? <a href={deal.linkedin_url.startsWith('http') ? deal.linkedin_url : `https://${deal.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">{deal.linkedin_url.replace(/https?:\/\/(www\.)?/, '')}</a> : null
-        } />
-        <Field icon={MapPin} label="Country" value={deal.country} />
-        {deal.address && <Field label="Address" value={deal.address} />}
-        {deal.description && <CollapsibleDescription text={deal.description} />}
+        <EditableField icon={User} label="First Name" value={deal.first_name} fieldName="first_name" dealId={deal.id} />
+        <EditableField icon={User} label="Last Name" value={deal.last_name} fieldName="last_name" dealId={deal.id} />
+        <EditableField icon={Briefcase} label="Job Title" value={deal.job_title} fieldName="job_title" dealId={deal.id} />
+        <EditableField icon={Mail} label="Email" value={deal.email} fieldName="email" dealId={deal.id} />
+        <EditableField icon={Phone} label="Phone" value={deal.phone} fieldName="phone" dealId={deal.id} />
+        <EditableField icon={Link2} label="LinkedIn" value={deal.linkedin_url} fieldName="linkedin_url" dealId={deal.id} />
+        <EditableField icon={MapPin} label="Country" value={deal.country} fieldName="country" dealId={deal.id} />
+        <EditableField label="Address" value={deal.address} fieldName="address" dealId={deal.id} />
+        <EditableField label="Description" value={deal.description} fieldName="description" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Company</p>
-        <Field icon={Building2} label="Company" value={deal.company} />
-        <Field label="Vertical" value={
-          deal.company_vertical ? (() => {
-            const vc = getVerticalColors(deal.company_vertical);
-            return (
-              <Badge variant="outline" className={`text-[11px] font-medium ${vc.bg} ${vc.text} ${vc.border}`}>
-                {deal.company_vertical}
-              </Badge>
-            );
-          })() : null
-        } />
-        <Field label="Size" value={deal.company_size} />
+        <EditableField icon={Building2} label="Company" value={deal.company} fieldName="company" dealId={deal.id} />
+        <EditableField label="Vertical" value={deal.company_vertical} fieldName="company_vertical" dealId={deal.id} />
+        <EditableField label="Size" value={deal.company_size} fieldName="company_size" dealId={deal.id} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Deal</p>
-        <Field icon={DollarSign} label="Deal Value" value={deal.deal_value ? fmtCurrency(deal.deal_value) : null} />
-        <Field label="Actual ACV" value={deal.actual_acv ? fmtCurrency(deal.actual_acv) : null} />
+        <StatusSelect deal={deal} />
+        <EditableField icon={DollarSign} label="Deal Value" value={deal.deal_value} fieldName="deal_value" dealId={deal.id} type="number" />
+        <EditableField label="Actual ACV" value={deal.actual_acv} fieldName="actual_acv" dealId={deal.id} type="number" />
         <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
-        <Field label="Closed Date" value={fmtDate(deal.closed_date)} />
-        <OwnerSelect deal={deal} uploadId={uploadId} />
+        <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
+        <OwnerSelect deal={deal} />
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
         <EditableNextSteps deal={deal} />
 
-        {deal.lost_reason && (
-          <>
-            <Separator className="my-3 bg-border/30" />
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Lost Reason</p>
-            <div className="flex items-start gap-3 py-2.5">
-              <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
-              <p className="text-sm text-destructive leading-relaxed">{deal.lost_reason}</p>
-            </div>
-          </>
-        )}
+        <EditableField icon={AlertTriangle} label="Lost Reason" value={deal.lost_reason} fieldName="lost_reason" dealId={deal.id} />
+        <EditableField label="Strongest Connection" value={deal.strongest_connection} fieldName="strongest_connection" dealId={deal.id} />
       </div>
     </ScrollArea>
   );
@@ -650,7 +680,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
-            <DetailsTab deal={deal} uploadId={uploadId} />
+            <DetailsTab deal={deal} />
           </TabsContent>
           <TabsContent value="people" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DealContactsTab dealId={deal.id} deal={deal} />
