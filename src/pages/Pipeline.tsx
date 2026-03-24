@@ -45,8 +45,14 @@ export default function Pipeline() {
   const queryClient = useQueryClient();
   const { data: deals = [] } = useAllDeals();
   const { data: uploads = [] } = useUploads();
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+
+  // Keep selectedDeal in sync with live query data
+  const selectedDeal = useMemo(
+    () => (selectedDealId ? deals.find((d) => d.id === selectedDealId) ?? null : null),
+    [selectedDealId, deals],
+  );
 
   // Add lead dialog state
   const [addLeadOpen, setAddLeadOpen] = useState(false);
