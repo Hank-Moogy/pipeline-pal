@@ -764,34 +764,51 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
           {!isLoading && timeline.map((item) => {
             const Icon = interactionIcons[item.type] || Mail;
             const label = interactionLabels[item.type] || item.type;
-            const isGmail = item.source === 'gmail_sync';
-            const isOutreach = item.source === 'outreach';
+            const isMago = item.contactEmail?.endsWith('@mago.studio') || item.type === 'email_sent';
+            const borderColor = isMago
+              ? 'border-l-primary'
+              : 'border-l-amber-500';
+            const decoded = item.body ? decodeHtmlEntities(item.body) : '';
 
             return (
               <Collapsible key={item.id}>
-                <div className="rounded-lg border border-border/30 bg-secondary/30 overflow-hidden">
+                <div className={`rounded-lg border border-border/30 border-l-[3px] ${borderColor} overflow-hidden ${isMago ? 'bg-primary/5' : 'bg-amber-500/5'}`}>
                   <CollapsibleTrigger asChild>
-                    <button className="w-full p-3 flex items-center gap-2 text-left hover:bg-accent/30 transition-colors group">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-xs font-medium flex-1 truncate">{item.subject || label}</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {isGmail && <Badge variant="outline" className="text-[9px] h-4 px-1">Gmail</Badge>}
-                        {isOutreach && <Badge variant="outline" className="text-[9px] h-4 px-1">Outreach</Badge>}
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
-                        </span>
-                        <ChevronDown className="h-3 w-3 text-muted-foreground/50 transition-transform group-data-[state=open]:rotate-180" />
+                    <button className="w-full p-3 flex flex-col gap-1.5 text-left hover:bg-accent/20 transition-colors group">
+                      <div className="flex items-center gap-2 w-full">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/70" />
+                        <span className="text-xs font-semibold flex-1 truncate text-foreground">{item.subject || label}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isMago ? (
+                            <Badge className="text-[9px] h-4 px-1.5 bg-primary/15 text-primary border-primary/30 hover:bg-primary/15">
+                              <ArrowUpRight className="h-2.5 w-2.5 mr-0.5" />Sent
+                            </Badge>
+                          ) : (
+                            <Badge className="text-[9px] h-4 px-1.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/15">
+                              <ArrowDownLeft className="h-2.5 w-2.5 mr-0.5" />Received
+                            </Badge>
+                          )}
+                          <span className="text-[10px] text-muted-foreground/70">
+                            {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                          </span>
+                          <ChevronDown className="h-3 w-3 text-muted-foreground/50 transition-transform group-data-[state=open]:rotate-180" />
+                        </div>
                       </div>
+                      {decoded && (
+                        <p className="text-[11px] text-foreground/60 line-clamp-2 pl-[22px] leading-relaxed">{decoded}</p>
+                      )}
                     </button>
                   </CollapsibleTrigger>
-                  {item.body && (
+                  {decoded && (
                     <CollapsibleContent>
                       <div className="px-3 pb-3 pt-0 border-t border-border/20">
                         {item.contactEmail && (
-                          <p className="text-[10px] text-muted-foreground/60 mt-2 mb-1.5">To: {item.contactEmail}</p>
+                          <p className="text-[10px] text-muted-foreground mt-2 mb-1.5">
+                            {isMago ? 'To' : 'From'}: <span className="font-medium text-foreground/70">{item.contactEmail}</span>
+                          </p>
                         )}
-                        <div className="mt-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words [&>*]:mb-1.5">
-                          {decodeHtmlEntities(item.body)}
+                        <div className="mt-2 text-xs text-foreground/80 leading-[1.7] whitespace-pre-wrap break-words">
+                          {decoded}
                         </div>
                       </div>
                     </CollapsibleContent>
