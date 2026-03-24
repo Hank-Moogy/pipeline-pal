@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { useUploads, useAllDeals, usePipelineSnapshot } from '@/hooks/useDeals';
 import { computeMetrics, computeWow } from '@/lib/metrics';
 import { CsvUpload } from '@/components/CsvUpload';
@@ -8,16 +7,14 @@ import { StatusChart } from '@/components/StatusChart';
 import { StatusTable } from '@/components/StatusTable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BarChart3, DollarSign, Scale, Clock, TrendingUp, LogOut, Kanban, Bot, Upload } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Link } from 'react-router-dom';
+import { BarChart3, DollarSign, Scale, Clock, Upload } from 'lucide-react';
+import { AppLayout } from '@/components/AppLayout';
 
 function fmtCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
 export default function Dashboard() {
-  const { signOut } = useAuth();
   const { data: uploads = [] } = useUploads();
   const { data: allDeals = [] } = useAllDeals();
 
@@ -36,45 +33,8 @@ export default function Dashboard() {
   const wowWeighted = hasCompare ? computeWow(currentMetrics.totalWeightedValue, compareMetrics.totalWeightedValue) : null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">Mago Growth OS</h1>
-            <nav className="ml-6 flex items-center gap-1">
-              <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
-                <BarChart3 className="h-4 w-4" />
-                Dashboard
-              </Button>
-              <Link to="/pipeline">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <Kanban className="h-4 w-4" />
-                  Pipeline
-                </Button>
-              </Link>
-              <Link to="/agents">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <Bot className="h-4 w-4" />
-                  Agents ⚠️WIP
-                </Button>
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+    <AppLayout>
+      <div className="mx-auto max-w-7xl w-full space-y-6 px-4 py-6 sm:px-6">
         {/* Upload + WoW comparison selector */}
         <div className="flex flex-wrap items-center gap-4">
           <Dialog>
@@ -167,7 +127,7 @@ export default function Dashboard() {
             </p>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

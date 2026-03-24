@@ -15,8 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Link } from 'react-router-dom';
+import { AppLayout } from '@/components/AppLayout';
 import { toast } from 'sonner';
 
 const COLUMN_COLORS: Record<string, string> = {
@@ -196,99 +195,66 @@ export default function Pipeline() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">Mago Growth OS</h1>
-            <nav className="ml-6 flex items-center gap-1">
-              <Link to="/">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <BarChart3 className="h-4 w-4" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
-                <Kanban className="h-4 w-4" />
-                Pipeline
-              </Button>
-              <Link to="/agents">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <Bot className="h-4 w-4" />
-                  Agents ⚠️WIP
-                </Button>
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => setAddLeadOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Lead
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => {
-                const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
-                const rows = deals.map(d => [
-                  d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, d.status, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
-                ].map(v => {
-                  if (v == null) return '';
-                  const s = String(v);
-                  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-                }).join(','));
-                const csv = [headers.join(','), ...rows].join('\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `pipeline-export-${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-              <SelectTrigger className="h-9 w-40 bg-secondary/60 border-border/40 text-sm">
-                <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                <SelectValue placeholder="All owners" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All owners</SelectItem>
-                <SelectItem value="Alvaro">Alvaro</SelectItem>
-                <SelectItem value="Andre">Andre</SelectItem>
-                <SelectItem value="Samori">Samori</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or company…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 w-56 h-9 bg-secondary/60 border-border/40 text-sm placeholder:text-muted-foreground/60"
-              />
-            </div>
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
-          </div>
+    <AppLayout>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-6 border-b border-border/40">
+        <Button
+          variant="default"
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={() => setAddLeadOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Add Lead
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={() => {
+            const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
+            const rows = deals.map(d => [
+              d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, d.status, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
+            ].map(v => {
+              if (v == null) return '';
+              const s = String(v);
+              return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+            }).join(','));
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pipeline-export-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
+        <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+          <SelectTrigger className="h-9 w-40 bg-secondary/60 border-border/40 text-sm">
+            <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue placeholder="All owners" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All owners</SelectItem>
+            <SelectItem value="Alvaro">Alvaro</SelectItem>
+            <SelectItem value="Andre">Andre</SelectItem>
+            <SelectItem value="Samori">Samori</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="relative ml-auto">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or company…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 w-56 h-9 bg-secondary/60 border-border/40 text-sm placeholder:text-muted-foreground/60"
+          />
         </div>
-      </header>
+      </div>
 
       {/* Kanban Board */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -426,6 +392,6 @@ export default function Pipeline() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 }

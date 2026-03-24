@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { TrendingUp, LogOut, BarChart3, Kanban, Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight, Settings } from "lucide-react";
+import { Bot, UserSearch, GitBranch, Mail, Share2, ArrowRight, Settings } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
 
 const AGENTS = [
   {
@@ -43,7 +43,7 @@ const AGENTS = [
 ];
 
 export default function Agents() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
 
   const { data: botConfig } = useQuery({
     queryKey: ['bot-config-name', user?.id],
@@ -66,47 +66,12 @@ export default function Agents() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
-    );
-  }
+  );
+}
   if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">Mago Growth OS</h1>
-            <nav className="ml-6 flex items-center gap-1">
-              <Link to="/">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <BarChart3 className="h-4 w-4" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Link to="/pipeline">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
-                  <Kanban className="h-4 w-4" />
-                  Pipeline
-                </Button>
-              </Link>
-              <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
-                <Bot className="h-4 w-4" />
-                Agents ⚠️WIP
-              </Button>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-foreground">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <AppLayout>
 
       <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
         <div className="text-center mb-10">
@@ -169,6 +134,6 @@ export default function Agents() {
           ))}
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }
