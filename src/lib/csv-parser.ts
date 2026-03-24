@@ -134,7 +134,7 @@ export function parseCsvFile(file: File): Promise<CsvParseResult> {
             last_name: row.lastname || '',
             company: (row.companies || '').split(',')[0]?.trim() || '',
             job_title: row.jobTitle || '',
-            status: (row.Status || '').trim(),
+            status: normalizeStatus(row.Status || ''),
             deal_value: parseFloat(row['Deal value']) || 0,
             actual_acv: parseFloat(row['Actual ACV']) || 0,
             company_size: row['Company size'] || '',
