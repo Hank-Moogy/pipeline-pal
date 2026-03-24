@@ -212,7 +212,7 @@ export default function Pipeline() {
               <Link to="/agents">
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5">
                   <Bot className="h-4 w-4" />
-                  Agents
+                  Agents ⚠️WIP
                 </Button>
               </Link>
             </nav>
