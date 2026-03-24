@@ -44,7 +44,7 @@ export default function Dashboard() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">Deal Tracker</h1>
+            <h1 className="text-lg font-bold tracking-tight">Argentic</h1>
             <nav className="ml-6 flex items-center gap-1">
               <Button variant="secondary" size="sm" className="gap-1.5 pointer-events-none">
                 <BarChart3 className="h-4 w-4" />
