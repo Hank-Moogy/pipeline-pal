@@ -110,6 +110,23 @@ export function DealCard({ deal, onClick }: Props) {
         )}
       </div>
 
+      {/* Last interaction — always visible for follow-up prioritisation */}
+      <div className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md ${
+        !deal.last_interaction
+          ? 'bg-destructive/10 text-destructive'
+          : (() => {
+              const days = Math.floor((Date.now() - new Date(deal.last_interaction).getTime()) / 86400000);
+              if (days > 14) return 'bg-destructive/10 text-destructive';
+              if (days > 7) return 'bg-[hsl(38,92%,50%)]/10 text-[hsl(38,70%,40%)]';
+              return 'bg-secondary text-muted-foreground';
+            })()
+      }`}>
+        <Calendar className="h-3 w-3 shrink-0" />
+        {deal.last_interaction
+          ? formatDistanceToNow(new Date(deal.last_interaction), { addSuffix: true })
+          : 'No interactions yet'}
+      </div>
+
       {/* Meta row */}
       <div className="flex items-center justify-between gap-2 pt-0.5">
         {deal.prospect_owner && (
@@ -117,12 +134,6 @@ export function DealCard({ deal, onClick }: Props) {
             <User className="h-3 w-3 shrink-0" />
             <span className="truncate">{deal.prospect_owner}</span>
           </div>
-        )}
-        {deal.last_interaction && (
-          <span className="shrink-0 text-[11px] text-muted-foreground flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {formatDistanceToNow(new Date(deal.last_interaction), { addSuffix: true })}
-          </span>
         )}
       </div>
 
