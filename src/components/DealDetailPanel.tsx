@@ -459,7 +459,24 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <StatusSelect deal={deal} />
         <DealValueSelect deal={deal} />
         <EditableField label="Actual ACV" value={deal.actual_acv} fieldName="actual_acv" dealId={deal.id} type="number" />
-        <Field icon={Calendar} label="Last Interaction" value={fmtDate(deal.last_interaction)} />
+        <div className="flex items-start gap-2 py-1 px-1">
+          <Calendar className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+          <div className="space-y-0.5">
+            <p className="text-[11px] font-medium text-muted-foreground">Last Interaction</p>
+            {deal.last_interaction ? (() => {
+              const days = Math.floor((Date.now() - new Date(deal.last_interaction).getTime()) / 86400000);
+              const color = days > 14 ? 'text-destructive' : days > 7 ? 'text-[hsl(var(--warning,38_92%_50%))]' : 'text-foreground';
+              return (
+                <p className={`text-xs font-medium ${color}`}>
+                  {formatDistanceToNow(new Date(deal.last_interaction), { addSuffix: true })}
+                  <span className="text-muted-foreground font-normal ml-1">({fmtDate(deal.last_interaction)})</span>
+                </p>
+              );
+            })() : (
+              <p className="text-xs text-destructive font-medium">No interactions yet</p>
+            )}
+          </div>
+        </div>
         <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
         <OwnerSelect deal={deal} />
 
