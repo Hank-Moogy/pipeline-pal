@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -61,12 +62,38 @@ function ContactProfileDialog({
   contact,
   open,
   onClose,
+  dealId,
 }: {
   contact: DealContact;
   open: boolean;
   onClose: () => void;
+  dealId: string;
 }) {
+  const queryClient = useQueryClient();
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Unknown';
+  const isVirtual = contact.id.startsWith('deal-main-');
+  const [notes, setNotes] = useState(contact.notes || '');
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+
+  const handleSaveNotes = async () => {
+    if (isVirtual) return;
+    setSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from('deal_contacts')
+        .update({ notes: notes.trim() || null })
+        .eq('id', contact.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+      toast.success('Notes updated');
+      setEditingNotes(false);
+    } catch {
+      toast.error('Failed to save notes');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -110,15 +137,41 @@ function ContactProfileDialog({
               </a>
             } />
           )}
-          {contact.notes && (
-            <>
-              <Separator className="bg-border/30" />
-              <div>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70 mb-1">Notes</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{contact.notes}</p>
+          <Separator className="bg-border/30" />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Notes</p>
+              {!isVirtual && !editingNotes && (
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px] gap-1" onClick={() => setEditingNotes(true)}>
+                  <Pencil className="h-3 w-3" /> Edit
+                </Button>
+              )}
+            </div>
+            {editingNotes && !isVirtual ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes about this contact…"
+                  className="min-h-[80px] resize-none bg-secondary/40 border-border/40 text-sm"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setNotes(contact.notes || ''); setEditingNotes(false); }}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs gap-1" onClick={handleSaveNotes} disabled={savingNotes}>
+                    {savingNotes && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
               </div>
-            </>
-          )}
+            ) : (
+              <p className="text-sm text-foreground whitespace-pre-wrap">
+                {contact.notes || <span className="text-muted-foreground/50 italic">No notes yet</span>}
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -427,7 +480,7 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
         <ContactFormDialog open dealId={dealId} existing={editContact} onClose={() => setEditContact(null)} />
       )}
       {viewContact && (
-        <ContactProfileDialog contact={viewContact} open onClose={() => setViewContact(null)} />
+        <ContactProfileDialog contact={viewContact} open onClose={() => setViewContact(null)} dealId={dealId} />
       )}
     </div>
   );

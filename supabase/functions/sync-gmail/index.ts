@@ -94,16 +94,32 @@ serve(async (req) => {
       .eq("id", dealId)
       .single();
 
-    if (dealErr || !deal?.email) {
-      return new Response(JSON.stringify({ synced: 0, message: "No contact email on deal" }), {
+    if (dealErr) throw new Error("Deal not found");
+
+    // Also get all deal_contacts emails
+    const { data: dealContacts } = await adminClient
+      .from("deal_contacts")
+      .select("email")
+      .eq("deal_id", dealId);
+
+    // Collect all unique emails from deal + deal_contacts
+    const allEmails = new Set<string>();
+    if (deal?.email) allEmails.add(deal.email.toLowerCase());
+    if (dealContacts) {
+      for (const c of dealContacts) {
+        if (c.email) allEmails.add(c.email.toLowerCase());
+      }
+    }
+
+    if (allEmails.size === 0) {
+      return new Response(JSON.stringify({ synced: 0, message: "No contact emails on deal" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const contactEmail = deal.email.toLowerCase();
-
-    // Search Gmail for emails with this contact
-    const query = encodeURIComponent(`from:${contactEmail} OR to:${contactEmail}`);
+    // Build Gmail query for all contact emails
+    const emailClauses = [...allEmails].map(e => `from:${e} OR to:${e}`).join(" OR ");
+    const query = encodeURIComponent(`{${emailClauses}}`);
     const searchRes = await fetch(
       `https://www.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=50`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -136,10 +152,22 @@ serve(async (req) => {
       const headers = details.payload?.headers || [];
       const subject = getHeader(headers, "Subject");
       const from = getHeader(headers, "From");
+      const to = getHeader(headers, "To");
       const dateStr = getHeader(headers, "Date");
       const fromEmail = extractEmail(from);
 
-      const interactionType = fromEmail === contactEmail ? "email_received" : "email_sent";
+      // Determine if this is sent or received based on whether from matches any contact
+      const isFromContact = allEmails.has(fromEmail);
+      const interactionType = isFromContact ? "email_received" : "email_sent";
+      
+      // Determine the contact email for this interaction
+      let contactEmail = fromEmail;
+      if (!isFromContact) {
+        // It's sent by user — find which contact it was sent to
+        const toEmails = to.split(",").map((t: string) => extractEmail(t.trim()));
+        contactEmail = toEmails.find((e: string) => allEmails.has(e)) || toEmails[0] || "";
+      }
+
       const occurredAt = dateStr ? new Date(dateStr).toISOString() : new Date(parseInt(details.internalDate)).toISOString();
       const snippet = details.snippet || "";
 
