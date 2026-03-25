@@ -480,7 +480,7 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
         <ContactFormDialog open dealId={dealId} existing={editContact} onClose={() => setEditContact(null)} />
       )}
       {viewContact && (
-        <ContactProfileDialog contact={viewContact} open onClose={() => setViewContact(null)} />
+        <ContactProfileDialog contact={viewContact} open onClose={() => setViewContact(null)} dealId={dealId} />
       )}
     </div>
   );
