@@ -405,7 +405,7 @@ export default function QuoteBuilder() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {[20, 25, 30, 35].map(d => (
+                            {[20, 25, 30, 35, 100].map(d => (
                               <SelectItem key={d} value={String(d)}>{d}%</SelectItem>
                             ))}
                           </SelectContent>
