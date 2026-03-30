@@ -41,6 +41,8 @@ export default function QuoteBuilder() {
   , [settings]);
 
   // Form state
+  const [quoteName, setQuoteName] = useState('');
+  const [quoteDescription, setQuoteDescription] = useState('');
   const [companyName, setCompanyName] = useState(dealCompany || '');
   const [contactPerson, setContactPerson] = useState(dealContact || '');
   const [contactEmail, setContactEmail] = useState(dealEmail || '');
