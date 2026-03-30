@@ -330,23 +330,70 @@ export default function QuoteBuilder() {
               <Card>
                 <CardHeader><CardTitle className="text-base">3. Credits Bundle</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  {Object.entries(pricing.credits).map(([key, c]) => (
-                    <div key={key} className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium">{c.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.credits.toLocaleString()} credits • {formatEur(c.price)}/pack
-                          {c.discount > 0 && ` • ${c.discount}% disc.`}
-                        </p>
+                  {Object.entries(pricing.credits).map(([key, c]) => {
+                    const isBulk = key === 'production_bulk' || key === 'enterprise_bulk';
+
+                    if (isBulk) {
+                      const bc = bulkCredits[key] || { credits: 0, discount: c.discount };
+                      return (
+                        <div key={key} className="rounded-md border border-border/50 p-3 space-y-2">
+                          <p className="text-sm font-medium">{c.label}</p>
+                          <p className="text-xs text-muted-foreground">Custom credits & discount</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Credits</Label>
+                              <Input
+                                type="number" min={0}
+                                value={bc.credits || ''}
+                                placeholder="e.g. 200000"
+                                onChange={e => setBulkCredits(prev => ({
+                                  ...prev,
+                                  [key]: { ...bc, credits: Number(e.target.value) || 0 },
+                                }))}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Discount %</Label>
+                              <Input
+                                type="number" min={0} max={100}
+                                value={bc.discount || ''}
+                                placeholder={`${c.discount}%`}
+                                onChange={e => setBulkCredits(prev => ({
+                                  ...prev,
+                                  [key]: { ...bc, discount: Number(e.target.value) || 0 },
+                                }))}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                          {bc.credits > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {bc.credits.toLocaleString()} credits at {bc.discount}% discount
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={key} className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">{c.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {c.credits.toLocaleString()} credits • {formatEur(c.price)}/pack
+                            {c.discount > 0 && ` • ${c.discount}% disc.`}
+                          </p>
+                        </div>
+                        <Input
+                          type="number" min={0}
+                          value={creditSelections[key] || 0}
+                          onChange={e => setCreditSelections(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
+                          className="w-20 h-8 text-sm text-right"
+                        />
                       </div>
-                      <Input
-                        type="number" min={0}
-                        value={creditSelections[key] || 0}
-                        onChange={e => setCreditSelections(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
-                        className="w-20 h-8 text-sm text-right"
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}
