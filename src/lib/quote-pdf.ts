@@ -1,4 +1,4 @@
-import { formatEur, type QuoteLineItems } from './quote-defaults';
+import { formatEur, type QuoteLineItems, type PricingConfig } from './quote-defaults';
 
 const COMPANY_ADDRESS = [
   '112 avenue de Paris',
@@ -203,4 +203,100 @@ export async function generateQuotePdf(quote: {
   }
 
   doc.save(`${quote.quote_number}.pdf`);
+}
+
+export async function generatePricingCatalogPdf(pricing: PricingConfig) {
+  const { default: jsPDF } = await import('jspdf');
+  const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
+  let y = 20;
+
+  // ── Logo ──
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = '/images/mago-logo.png';
+    });
+    doc.addImage(img, 'PNG', 14, 10, 24, 24);
+  } catch { /* skip */ }
+
+  // ── Company address ──
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120, 120, 120);
+  COMPANY_ADDRESS.forEach((line, i) => {
+    doc.text(line, pageW - 14, 14 + i * 4, { align: 'right' });
+  });
+  doc.setTextColor(0, 0, 0);
+  y = 42;
+
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Pricing Catalog', 14, y);
+  y += 10;
+
+  const addSection = (title: string) => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    y += 4;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, 14, y);
+    y += 7;
+  };
+
+  const addLine = (label: string, value: string) => {
+    if (y > 275) { doc.addPage(); y = 20; }
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label, 18, y);
+    doc.text(value, pageW - 14, y, { align: 'right' });
+    y += 6;
+  };
+
+  // Hosting
+  addSection('Hosting');
+  Object.values(pricing.hosting).forEach(h => {
+    addLine(h.label, `${formatEur(h.annual)}/yr | Install: ${formatEur(h.installation)}`);
+  });
+
+  // Licenses
+  addSection('Licenses');
+  Object.values(pricing.licenses).forEach(l => {
+    addLine(`${l.label} (${l.credits_per_year.toLocaleString('fr-FR')} credits/yr)`, `${formatEur(l.price_per_user_year)}/user/yr`);
+  });
+
+  // Credit Packs
+  addSection('Credit Packs');
+  Object.values(pricing.credits).forEach(c => {
+    addLine(`${c.label} (${c.credits.toLocaleString('fr-FR')} credits)`, `${formatEur(c.price)}/pack`);
+  });
+
+  // Support
+  addSection('Support & SLA');
+  Object.values(pricing.support).forEach(s => {
+    addLine(s.label, `${formatEur(s.annual)}/yr`);
+  });
+
+  // Services
+  addSection('Professional Services');
+  Object.values(pricing.services).forEach(s => {
+    addLine(`${s.label} (${s.unit})`, formatEur(s.price));
+  });
+
+  // Custom Dev
+  addSection('Custom Development');
+  Object.values(pricing.custom_dev).forEach(c => {
+    addLine(c.label, formatEur(c.price));
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 100, 100);
+    doc.text(c.description, 22, y);
+    y += 5;
+    doc.setTextColor(0, 0, 0);
+  });
+
+  doc.save('Mago-Pricing-Catalog.pdf');
 }
