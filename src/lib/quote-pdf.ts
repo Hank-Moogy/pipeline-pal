@@ -1,10 +1,10 @@
 import { formatEur, type QuoteLineItems } from './quote-defaults';
 
 const COMPANY_ADDRESS = [
-  'Mago VFX Technologies',
-  '123 Innovation Street',
-  '75001 Paris, France',
-  'contact@mago.ai',
+  '112 avenue de Paris',
+  'CS 60002 - CX 94306',
+  '94300 VINCENNES, FRANCE',
+  'hello@mago.studio',
 ];
 
 export async function generateQuotePdf(quote: {
