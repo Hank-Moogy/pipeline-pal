@@ -914,14 +914,32 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Badge variant="outline" className="text-[11px] font-normal">{deal.company_size}</Badge>
             )}
           </div>
-          <Button
-            size="sm"
-            className="w-full gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
-            onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Generate Outreach with AI
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1 gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
+              onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Outreach with AI
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1 gap-2 text-xs bg-accent hover:bg-accent/80 border border-border shadow-sm"
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set('dealId', deal.id);
+                if (deal.company) params.set('company', deal.company);
+                if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
+                if (deal.email) params.set('email', deal.email);
+                window.location.href = `/quotes/new?${params.toString()}`;
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Generate Quote
+            </Button>
+          </div>
         </SheetHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 pb-6">
