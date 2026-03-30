@@ -937,6 +937,19 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
     enabled: !!deal,
   });
   const touchpointCount = emails.length + interactionsCount.length;
+  const { data: dealQuotes = [] } = useQuery({
+    queryKey: ['deal-quotes-count', deal?.id],
+    queryFn: async () => {
+      if (!deal) return [];
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('deal_id', deal.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deal,
+  });
 
   if (!deal) return null;
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
