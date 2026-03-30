@@ -174,7 +174,7 @@ export default function QuoteBuilder() {
           };
         }),
     };
-  }, [pricing, hostingModel, licenseQty, creditSelections, supportSelections, serviceQty, customDevQty]);
+  }, [pricing, hostingModel, licenseQty, creditSelections, bulkCredits, supportSelections, serviceQty, customDevQty]);
 
   const totals = useMemo(() => calculateTotals(lineItems, discount), [lineItems, discount]);
 
