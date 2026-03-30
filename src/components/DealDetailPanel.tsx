@@ -816,7 +816,6 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
                       {decoded && (
                         <p className="text-[11px] text-foreground/60 line-clamp-2 pl-[22px] leading-relaxed break-words">{decoded}</p>
                       )}
-                      )}
                     </button>
                   </CollapsibleTrigger>
                   {decoded && (
