@@ -1002,37 +1002,37 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
         </SheetHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 pb-6">
-          <TabsList className="w-full shrink-0 bg-secondary/50">
-            <TabsTrigger value="details" className="flex-1 gap-1.5 text-xs">
-              <Info className="h-3.5 w-3.5" />
+          <TabsList className="w-full shrink-0 bg-secondary/50 h-auto flex-wrap gap-0.5 p-1">
+            <TabsTrigger value="details" className="flex-1 gap-1 text-[11px] px-2 py-1.5 min-w-0">
+              <Info className="h-3 w-3 shrink-0" />
               Details
             </TabsTrigger>
-            <TabsTrigger value="people" className="flex-1 gap-1.5 text-xs">
-              <Users className="h-3.5 w-3.5" />
+            <TabsTrigger value="people" className="flex-1 gap-1 text-[11px] px-2 py-1.5 min-w-0">
+              <Users className="h-3 w-3 shrink-0" />
               People
               {contacts.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{contacts.length}</Badge>
+                <Badge variant="secondary" className="text-[9px] h-3.5 px-1 ml-0.5">{contacts.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="notes" className="flex-1 gap-1.5 text-xs">
-              <MessageSquare className="h-3.5 w-3.5" />
+            <TabsTrigger value="notes" className="flex-1 gap-1 text-[11px] px-2 py-1.5 min-w-0">
+              <MessageSquare className="h-3 w-3 shrink-0" />
               Notes
               {notes.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{notes.length}</Badge>
+                <Badge variant="secondary" className="text-[9px] h-3.5 px-1 ml-0.5">{notes.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="touchpoints" className="flex-1 gap-1.5 text-xs">
-              <Zap className="h-3.5 w-3.5" />
-              Touchpoints
+            <TabsTrigger value="touchpoints" className="flex-1 gap-1 text-[11px] px-2 py-1.5 min-w-0">
+              <Zap className="h-3 w-3 shrink-0" />
+              Touch
               {touchpointCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{touchpointCount}</Badge>
+                <Badge variant="secondary" className="text-[9px] h-3.5 px-1 ml-0.5">{touchpointCount}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-1 gap-1.5 text-xs">
-              <Receipt className="h-3.5 w-3.5" />
+            <TabsTrigger value="quotes" className="flex-1 gap-1 text-[11px] px-2 py-1.5 min-w-0">
+              <Receipt className="h-3 w-3 shrink-0" />
               Quotes
               {dealQuotes.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{dealQuotes.length}</Badge>
+                <Badge variant="secondary" className="text-[9px] h-3.5 px-1 ml-0.5">{dealQuotes.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
