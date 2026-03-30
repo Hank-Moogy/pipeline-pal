@@ -126,7 +126,7 @@ export async function generateQuotePdf(quote: {
   if (quote.line_items.credits?.length) {
     addSectionTitle('3. Credits');
     quote.line_items.credits.forEach(c => {
-      addRow(`${c.tier} × ${c.quantity}`, formatEur(c.total_price));
+      addRow(`${c.tier} × ${c.quantity} (${c.total_credits.toLocaleString()} credits)`, formatEur(c.total_price));
     });
   }
 
