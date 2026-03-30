@@ -14,6 +14,10 @@ import CrmAgent from "./pages/agents/CrmAgent";
 import SocialAgent from "./pages/agents/SocialAgent";
 import OpenClaw from "./pages/agents/OpenClaw";
 import OpenClawConfig from "./pages/agents/OpenClawConfig";
+import Quotes from "./pages/Quotes";
+import QuoteBuilder from "./pages/QuoteBuilder";
+import QuoteDetail from "./pages/QuoteDetail";
+import QuoteSettings from "./pages/QuoteSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +39,10 @@ const App = () => (
             <Route path="/agents/social" element={<SocialAgent />} />
             <Route path="/agents/openclaw" element={<OpenClaw />} />
             <Route path="/agents/openclaw/config" element={<OpenClawConfig />} />
+            <Route path="/quotes" element={<Quotes />} />
+            <Route path="/quotes/new" element={<QuoteBuilder />} />
+            <Route path="/quotes/settings" element={<QuoteSettings />} />
+            <Route path="/quotes/:id" element={<QuoteDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

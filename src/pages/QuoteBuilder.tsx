@@ -1,0 +1,465 @@
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AppLayout } from '@/components/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuoteSettings, useCreateQuote, useQuote, useUpdateQuote } from '@/hooks/useQuotes';
+import {
+  type PricingConfig, type QuoteLineItems,
+  emptyLineItems, calculateTotals, generateQuoteNumber, formatEur,
+} from '@/lib/quote-defaults';
+import { toast } from 'sonner';
+
+export default function QuoteBuilder() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  const dealId = searchParams.get('dealId');
+  const dealCompany = searchParams.get('company');
+  const dealContact = searchParams.get('contact');
+  const dealEmail = searchParams.get('email');
+  const parentQuoteId = searchParams.get('parentId');
+  const parentVersion = searchParams.get('parentVersion');
+
+  const { user } = useAuth();
+  const { data: settings, isLoading: loadingSettings } = useQuoteSettings();
+  const { data: existingQuote } = useQuote(editId || undefined);
+  const createQuote = useCreateQuote();
+  const updateQuote = useUpdateQuote();
+
+  const pricing = useMemo(() =>
+    (settings?.pricing as unknown as PricingConfig) || null
+  , [settings]);
+
+  // Form state
+  const [companyName, setCompanyName] = useState(dealCompany || '');
+  const [contactPerson, setContactPerson] = useState(dealContact || '');
+  const [contactEmail, setContactEmail] = useState(dealEmail || '');
+  const [quoteNumber, setQuoteNumber] = useState(generateQuoteNumber());
+  const [validUntil, setValidUntil] = useState('');
+  const [notes, setNotes] = useState('');
+  const [discount, setDiscount] = useState(0);
+
+  // Line item selections
+  const [hostingModel, setHostingModel] = useState('saas');
+  const [licenseQty, setLicenseQty] = useState<Record<string, number>>({ studio: 0, enterprise: 0 });
+  const [creditSelections, setCreditSelections] = useState<Record<string, number>>({});
+  const [supportSelections, setSupportSelections] = useState<Record<string, boolean>>({ standard: true });
+  const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
+  const [customDevQty, setCustomDevQty] = useState<Record<string, number>>({});
+
+  // Load existing quote for editing
+  useEffect(() => {
+    if (existingQuote) {
+      setCompanyName(existingQuote.company_name || '');
+      setContactPerson(existingQuote.contact_person || '');
+      setContactEmail(existingQuote.contact_email || '');
+      setQuoteNumber(existingQuote.quote_number);
+      setValidUntil(existingQuote.valid_until || '');
+      setNotes(existingQuote.notes || '');
+      setDiscount(existingQuote.contract_discount);
+      const li = existingQuote.line_items as unknown as QuoteLineItems;
+      if (li) {
+        setHostingModel(li.hosting?.model || 'saas');
+        const lq: Record<string, number> = {};
+        li.licenses?.forEach(l => { lq[l.type.toLowerCase()] = l.quantity; });
+        setLicenseQty(lq);
+        const cs: Record<string, number> = {};
+        li.credits?.forEach(c => { cs[c.tier.toLowerCase()] = c.quantity; });
+        setCreditSelections(cs);
+        const ss: Record<string, boolean> = {};
+        li.support?.forEach(s => { ss[s.tier.toLowerCase().replace(/[^a-z_]/g, '_')] = true; });
+        setSupportSelections(ss);
+        const sq: Record<string, number> = {};
+        li.services?.forEach(s => { sq[s.name] = s.quantity; });
+        setServiceQty(sq);
+        const cd: Record<string, number> = {};
+        li.custom_dev?.forEach(c => { cd[c.type.toLowerCase()] = c.quantity; });
+        setCustomDevQty(cd);
+      }
+    }
+  }, [existingQuote]);
+
+  // Build line items from current selections
+  const lineItems = useMemo((): QuoteLineItems => {
+    if (!pricing) return emptyLineItems();
+
+    const hostingConfig = pricing.hosting[hostingModel as keyof typeof pricing.hosting];
+
+    return {
+      hosting: {
+        model: hostingConfig?.label || hostingModel,
+        installation_fee: hostingConfig?.installation || 0,
+        annual_fee: hostingConfig?.annual || 0,
+      },
+      licenses: Object.entries(licenseQty)
+        .filter(([, q]) => q > 0)
+        .map(([key, qty]) => {
+          const cfg = pricing.licenses[key as keyof typeof pricing.licenses];
+          return {
+            type: cfg?.label || key,
+            quantity: qty,
+            price_per_user: cfg?.price_per_user_year || 0,
+            total: qty * (cfg?.price_per_user_year || 0),
+            credits: qty * (cfg?.credits_per_year || 0),
+          };
+        }),
+      credits: Object.entries(creditSelections)
+        .filter(([, q]) => q > 0)
+        .map(([key, qty]) => {
+          const cfg = pricing.credits[key as keyof typeof pricing.credits];
+          return {
+            tier: cfg?.label || key,
+            quantity: qty,
+            unit_price: cfg?.price || 0,
+            credits_per_pack: cfg?.credits || 0,
+            total_price: qty * (cfg?.price || 0),
+            total_credits: qty * (cfg?.credits || 0),
+          };
+        }),
+      support: Object.entries(supportSelections)
+        .filter(([, on]) => on)
+        .map(([key]) => {
+          const cfg = pricing.support[key as keyof typeof pricing.support];
+          return { tier: cfg?.label || key, annual: cfg?.annual || 0 };
+        }),
+      services: Object.entries(serviceQty)
+        .filter(([, q]) => q > 0)
+        .map(([name, qty]) => {
+          const entry = Object.values(pricing.services).find(s => s.label === name);
+          return {
+            name,
+            quantity: qty,
+            unit_price: entry?.price || 0,
+            unit: entry?.unit || '',
+            total: qty * (entry?.price || 0),
+          };
+        }),
+      custom_dev: Object.entries(customDevQty)
+        .filter(([, q]) => q > 0)
+        .map(([key, qty]) => {
+          const cfg = pricing.custom_dev[key as keyof typeof pricing.custom_dev];
+          return {
+            type: cfg?.label || key,
+            quantity: qty,
+            unit_price: cfg?.price || 0,
+            total: qty * (cfg?.price || 0),
+          };
+        }),
+    };
+  }, [pricing, hostingModel, licenseQty, creditSelections, supportSelections, serviceQty, customDevQty]);
+
+  const totals = useMemo(() => calculateTotals(lineItems, discount), [lineItems, discount]);
+
+  const handleSave = async (asDraft = true) => {
+    if (!user) return;
+    const payload = {
+      company_name: companyName || null,
+      contact_person: contactPerson || null,
+      contact_email: contactEmail || null,
+      quote_number: quoteNumber,
+      hosting_model: hostingModel,
+      line_items: lineItems as any,
+      total_arr: totals.totalArr,
+      total_onetime: totals.totalOnetime,
+      total_year1: totals.totalYear1,
+      contract_discount: discount,
+      valid_until: validUntil || null,
+      notes: notes || null,
+      status: asDraft ? 'draft' : 'sent',
+      deal_id: dealId || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      if (editId) {
+        await updateQuote.mutateAsync({ id: editId, updates: { ...payload, last_edited_by: user.id } });
+        toast.success('Quote updated');
+        navigate(`/quotes/${editId}`);
+      } else {
+        const version = parentVersion ? Number(parentVersion) + 1 : 1;
+        const result = await createQuote.mutateAsync({
+          ...payload,
+          created_by: user.id,
+          last_edited_by: user.id,
+          version,
+          parent_quote_id: parentQuoteId || null,
+        });
+        toast.success('Quote created');
+        navigate(`/quotes/${result.id}`);
+      }
+    } catch {
+      toast.error('Failed to save quote');
+    }
+  };
+
+  if (loadingSettings) return (
+    <AppLayout>
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    </AppLayout>
+  );
+
+  return (
+    <AppLayout>
+      <div className="p-6 max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/quotes')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">{editId ? 'Edit Quote' : parentQuoteId ? 'New Version' : 'New Quote'}</h1>
+              <p className="text-sm text-muted-foreground">{quoteNumber}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={createQuote.isPending || updateQuote.isPending}>
+              <Save className="h-4 w-4 mr-1" /> Save Draft
+            </Button>
+            <Button onClick={() => handleSave(false)} disabled={createQuote.isPending || updateQuote.isPending}>
+              {(createQuote.isPending || updateQuote.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Save & Mark Sent
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            {/* Client Info */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Client Information</CardTitle></CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Company Name</Label>
+                  <Input value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Contact Person</Label>
+                  <Input value={contactPerson} onChange={e => setContactPerson(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Valid Until</Label>
+                  <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 1. Hosting */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">1. Hosting Scenario</CardTitle></CardHeader>
+                <CardContent>
+                  <RadioGroup value={hostingModel} onValueChange={setHostingModel} className="space-y-2">
+                    {Object.entries(pricing.hosting).map(([key, h]) => (
+                      <div key={key} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50">
+                        <RadioGroupItem value={key} id={`h-${key}`} />
+                        <Label htmlFor={`h-${key}`} className="flex-1 cursor-pointer">
+                          <span>{h.label}</span>
+                          {(h.annual > 0 || h.installation > 0) && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {h.annual > 0 && `${formatEur(h.annual)}/yr`}
+                              {h.installation > 0 && ` + ${formatEur(h.installation)} install`}
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 2. Licenses */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">2. License Selection</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {Object.entries(pricing.licenses).map(([key, l]) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">{l.label}</p>
+                        <p className="text-xs text-muted-foreground">{formatEur(l.price_per_user_year)}/user/yr • {l.credits_per_year.toLocaleString()} credits</p>
+                      </div>
+                      <Input
+                        type="number" min={0}
+                        value={licenseQty[key] || 0}
+                        onChange={e => setLicenseQty(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
+                        className="w-20 h-8 text-sm text-right"
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 3. Credits */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">3. Credits Bundle</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {Object.entries(pricing.credits).map(([key, c]) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">{c.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.credits.toLocaleString()} credits • {formatEur(c.price)}/pack
+                          {c.discount > 0 && ` • ${c.discount}% disc.`}
+                        </p>
+                      </div>
+                      <Input
+                        type="number" min={0}
+                        value={creditSelections[key] || 0}
+                        onChange={e => setCreditSelections(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
+                        className="w-20 h-8 text-sm text-right"
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 4. Support */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">4. Support & SLA</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {Object.entries(pricing.support).map(([key, s]) => (
+                    <div key={key} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent/50">
+                      <Checkbox
+                        checked={!!supportSelections[key]}
+                        onCheckedChange={v => setSupportSelections(prev => ({ ...prev, [key]: !!v }))}
+                        id={`s-${key}`}
+                      />
+                      <Label htmlFor={`s-${key}`} className="flex-1 cursor-pointer">
+                        <span>{s.label}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{formatEur(s.annual)}/yr</span>
+                      </Label>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 5. Professional Services */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">5. Professional Services</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {Object.entries(pricing.services).map(([, s]) => (
+                    <div key={s.label} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">{s.label}</p>
+                        <p className="text-xs text-muted-foreground">{formatEur(s.price)} {s.unit}</p>
+                      </div>
+                      <Input
+                        type="number" min={0}
+                        value={serviceQty[s.label] || 0}
+                        onChange={e => setServiceQty(prev => ({ ...prev, [s.label]: Number(e.target.value) || 0 }))}
+                        className="w-20 h-8 text-sm text-right"
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 6. Custom Dev */}
+            {pricing && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">6. Custom Development</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {Object.entries(pricing.custom_dev).map(([key, c]) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">{c.label}</p>
+                        <p className="text-xs text-muted-foreground">{formatEur(c.price)} — {c.description}</p>
+                      </div>
+                      <Input
+                        type="number" min={0}
+                        value={customDevQty[key] || 0}
+                        onChange={e => setCustomDevQty(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
+                        className="w-20 h-8 text-sm text-right"
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notes */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
+              <CardContent>
+                <Textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Additional notes for this quote…"
+                  className="min-h-[80px]"
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar summary */}
+          <div className="lg:sticky lg:top-6 h-fit space-y-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Quote Summary</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">License Fees</span><span>{formatEur(lineItems.licenses.reduce((s, l) => s + l.total, 0))}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Hosting</span><span>{formatEur(lineItems.hosting.annual_fee)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span>{formatEur(lineItems.credits.reduce((s, c) => s + c.total_price, 0))}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Support</span><span>{formatEur(lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
+                  <Separator />
+                  <div className="flex justify-between font-medium"><span>Subtotal ARR</span><span>{formatEur(totals.totalArr + totals.totalArr * (discount / (100 - discount || 1)))}</span></div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-destructive">
+                      <span>Discount ({discount}%)</span>
+                      <span>-</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">Discount %</span>
+                    <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
+                  </div>
+                  <div className="flex justify-between font-semibold text-primary"><span>Total ARR</span><span>{formatEur(totals.totalArr)}</span></div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Installation</span><span>{formatEur(lineItems.hosting.installation_fee)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Services</span><span>{formatEur(lineItems.services.reduce((s, sv) => s + sv.total, 0))}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custom Dev</span><span>{formatEur(lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold"><span>Total One-Time</span><span>{formatEur(totals.totalOnetime)}</span></div>
+                </div>
+
+                <Separator />
+
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Year 1 Total</span>
+                  <span className="text-primary">{formatEur(totals.totalYear1)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
