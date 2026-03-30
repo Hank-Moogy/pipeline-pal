@@ -540,7 +540,7 @@ export default function QuoteBuilder() {
                     <span className="text-muted-foreground text-xs">Discount %</span>
                     <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                   </div>
-                  <div className="flex justify-between font-semibold text-primary"><span>Recurring Total</span><span>{formatEur(totals.totalArr)}</span></div>
+                  <div className="flex justify-between font-semibold text-primary"><span>{quoteType === 'one_off' ? 'Subtotal' : 'Recurring Total'}</span><span>{formatEur(totals.totalArr)}</span></div>
                 </div>
 
                 <Separator />
