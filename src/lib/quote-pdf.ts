@@ -1,13 +1,21 @@
 import { formatEur, type QuoteLineItems } from './quote-defaults';
 
+const COMPANY_ADDRESS = [
+  'Mago VFX Technologies',
+  '123 Innovation Street',
+  '75001 Paris, France',
+  'contact@mago.ai',
+];
+
 export async function generateQuotePdf(quote: {
   quote_number: string;
+  quote_name?: string | null;
+  description?: string | null;
   company_name: string | null;
   contact_person: string | null;
   contact_email: string | null;
   hosting_model: string | null;
   line_items: QuoteLineItems;
-  total_arr: number;
   total_onetime: number;
   total_year1: number;
   contract_discount: number;
@@ -18,14 +26,57 @@ export async function generateQuotePdf(quote: {
 }) {
   const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
   let y = 20;
 
-  const addLine = (text: string, fontSize = 10, bold = false) => {
-    doc.setFontSize(fontSize);
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.text(text, 14, y);
-    y += fontSize * 0.5 + 2;
-  };
+  // ── Logo (top-left) ──
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = '/images/mago-logo.png';
+    });
+    doc.addImage(img, 'PNG', 14, 10, 24, 24);
+  } catch {
+    // logo unavailable – skip
+  }
+
+  // ── Company address (top-right) ──
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120, 120, 120);
+  COMPANY_ADDRESS.forEach((line, i) => {
+    doc.text(line, pageW - 14, 14 + i * 4, { align: 'right' });
+  });
+  doc.setTextColor(0, 0, 0);
+
+  y = 42;
+
+  // ── Quote title / name ──
+  if (quote.quote_name) {
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(quote.quote_name, 14, y);
+    y += 8;
+  } else {
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Quote', 14, y);
+    y += 8;
+  }
+
+  // ── Description ──
+  if (quote.description) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    const descLines = doc.splitTextToSize(quote.description, 170);
+    doc.text(descLines, 14, y);
+    y += descLines.length * 5 + 4;
+    doc.setTextColor(0, 0, 0);
+  }
 
   const addRow = (label: string, value: string) => {
     doc.setFontSize(10);
@@ -35,90 +86,100 @@ export async function generateQuotePdf(quote: {
     y += 6;
   };
 
-  addLine('Mago — Quote', 18, true);
-  y += 4;
+  const addSectionTitle = (text: string) => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    y += 4;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(text, 14, y);
+    y += 7;
+  };
 
+  // ── Meta ──
   addRow('Quote Number:', quote.quote_number);
   addRow('Date:', new Date(quote.created_at).toLocaleDateString('en-GB'));
   if (quote.valid_until) addRow('Valid Until:', new Date(quote.valid_until).toLocaleDateString('en-GB'));
   if (quote.creatorName) addRow('Created By:', quote.creatorName);
   y += 4;
 
-  addLine('Client Information', 12, true);
+  // ── Client info ──
+  addSectionTitle('Client Information');
   if (quote.company_name) addRow('Company:', quote.company_name);
   if (quote.contact_person) addRow('Contact:', quote.contact_person);
   if (quote.contact_email) addRow('Email:', quote.contact_email);
-  y += 4;
 
-  // Hosting
-  addLine('1. Hosting', 12, true);
+  // ── Hosting ──
+  addSectionTitle('1. Hosting');
   addRow('Model:', quote.line_items.hosting?.model || 'N/A');
   if (quote.line_items.hosting?.installation_fee) addRow('Installation Fee:', formatEur(quote.line_items.hosting.installation_fee));
-  y += 2;
 
-  // Licenses
+  // ── Licenses ──
   if (quote.line_items.licenses?.length) {
-    addLine('2. Licenses', 12, true);
+    addSectionTitle('2. Licenses');
     quote.line_items.licenses.forEach(l => {
       addRow(`${l.type} × ${l.quantity}`, formatEur(l.total));
     });
-    y += 2;
   }
 
-  // Credits
+  // ── Credits ──
   if (quote.line_items.credits?.length) {
-    addLine('3. Credits', 12, true);
+    addSectionTitle('3. Credits');
     quote.line_items.credits.forEach(c => {
       addRow(`${c.tier} × ${c.quantity}`, formatEur(c.total_price));
     });
-    y += 2;
   }
 
-  // Support
+  // ── Support ──
   if (quote.line_items.support?.length) {
-    addLine('4. Support & SLA', 12, true);
+    addSectionTitle('4. Support & SLA');
     quote.line_items.support.forEach(s => {
       addRow(s.tier, formatEur(s.annual));
     });
-    y += 2;
   }
 
-  // Services
+  // ── Services ──
   if (quote.line_items.services?.length) {
-    addLine('5. Professional Services', 12, true);
+    addSectionTitle('5. Professional Services');
     quote.line_items.services.forEach(s => {
       addRow(`${s.name} × ${s.quantity}`, formatEur(s.total));
     });
-    y += 2;
   }
 
-  // Custom Dev
+  // ── Custom Dev ──
   if (quote.line_items.custom_dev?.length) {
-    addLine('6. Custom Development', 12, true);
+    addSectionTitle('6. Custom Development');
     quote.line_items.custom_dev.forEach(c => {
       addRow(`${c.type} × ${c.quantity}`, formatEur(c.total));
     });
-    y += 2;
   }
 
-  // Check if we need a new page
+  // ── Summary (no ARR) ──
   if (y > 240) { doc.addPage(); y = 20; }
+  y += 6;
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Quote Summary', 14, y);
+  y += 8;
 
-  // Summary
-  y += 4;
-  addLine('Quote Summary', 14, true);
-  y += 2;
-  addRow('Total ARR:', formatEur(quote.total_arr));
   addRow('Total One-Time:', formatEur(quote.total_onetime));
   if (quote.contract_discount > 0) addRow('Discount:', `${quote.contract_discount}%`);
   y += 2;
   doc.setDrawColor(0);
   doc.line(14, y - 2, 196, y - 2);
-  addLine(`Year 1 Total: ${formatEur(quote.total_year1)}`, 14, true);
 
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Year 1 Total: ${formatEur(quote.total_year1)}`, 14, y + 4);
+  y += 10;
+
+  // ── Notes ──
   if (quote.notes) {
+    if (y > 250) { doc.addPage(); y = 20; }
     y += 6;
-    addLine('Notes', 12, true);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Notes', 14, y);
+    y += 6;
     const lines = doc.splitTextToSize(quote.notes, 170);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');

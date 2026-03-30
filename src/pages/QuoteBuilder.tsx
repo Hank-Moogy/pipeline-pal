@@ -265,6 +265,21 @@ export default function QuoteBuilder() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
+            {/* Quote Info */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Quote Details</CardTitle></CardHeader>
+              <CardContent className="grid gap-4">
+                <div>
+                  <Label>Quote Name</Label>
+                  <Input value={quoteName} onChange={e => setQuoteName(e.target.value)} placeholder="e.g. Annual VFX Pipeline License" />
+                </div>
+                <div>
+                  <Label>Description / Context</Label>
+                  <Textarea value={quoteDescription} onChange={e => setQuoteDescription(e.target.value)} placeholder="Explain the context of this quote…" className="min-h-[60px]" />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Client Info */}
             <Card>
               <CardHeader><CardTitle className="text-base">Client Information</CardTitle></CardHeader>

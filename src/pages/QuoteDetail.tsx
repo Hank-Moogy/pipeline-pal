@@ -46,6 +46,8 @@ export default function QuoteDetail() {
   const handleDownload = () => {
     generateQuotePdf({
       ...quote,
+      quote_name: (quote as any).quote_name,
+      description: (quote as any).description,
       line_items: li,
       creatorName: profileMap[quote.created_by] || undefined,
     });
