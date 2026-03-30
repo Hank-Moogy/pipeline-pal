@@ -208,6 +208,7 @@ export default function QuoteBuilder() {
       notes: notes || null,
       status: asDraft ? 'draft' : 'sent',
       deal_id: dealId || null,
+      quote_type: quoteType,
       updated_at: new Date().toISOString(),
     };
 
