@@ -437,24 +437,6 @@ function DetailsTab({ deal }: { deal: Deal }) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-1 pb-6 pr-1">
-        {/* Generate Quote CTA */}
-        <div className="px-1 pb-3">
-          <Button
-            size="sm"
-            className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
-            onClick={() => {
-              const params = new URLSearchParams();
-              params.set('dealId', deal.id);
-              if (deal.company) params.set('company', deal.company);
-              if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
-              if (deal.email) params.set('email', deal.email);
-              window.location.href = `/quotes/new?${params.toString()}`;
-            }}
-          >
-            <FileText className="h-4 w-4" /> Generate Quote
-          </Button>
-        </div>
-
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Contact</p>
         <EditableField icon={User} label="First Name" value={deal.first_name} fieldName="first_name" dealId={deal.id} />
         <EditableField icon={User} label="Last Name" value={deal.last_name} fieldName="last_name" dealId={deal.id} />
@@ -914,14 +896,32 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
               <Badge variant="outline" className="text-[11px] font-normal">{deal.company_size}</Badge>
             )}
           </div>
-          <Button
-            size="sm"
-            className="w-full gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
-            onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Generate Outreach with AI
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1 gap-2 text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm"
+              onClick={() => navigate(`/agents/crm?dealId=${deal.id}`)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Outreach with AI
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1 gap-2 text-xs bg-accent hover:bg-accent/80 border border-border shadow-sm"
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set('dealId', deal.id);
+                if (deal.company) params.set('company', deal.company);
+                if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
+                if (deal.email) params.set('email', deal.email);
+                window.location.href = `/quotes/new?${params.toString()}`;
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Generate Quote
+            </Button>
+          </div>
         </SheetHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 px-6 pb-6">
