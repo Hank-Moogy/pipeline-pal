@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { BarChart3, Kanban, Bot, TrendingUp, LogOut, Settings, User } from "lucide-react";
+import { BarChart3, Kanban, Bot, TrendingUp, LogOut, Settings, User, FileText } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
