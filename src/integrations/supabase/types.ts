@@ -731,12 +731,14 @@ export type Database = {
           created_at: string
           created_by: string
           deal_id: string | null
+          description: string | null
           hosting_model: string | null
           id: string
           last_edited_by: string | null
           line_items: Json
           notes: string | null
           parent_quote_id: string | null
+          quote_name: string | null
           quote_number: string
           status: string
           total_arr: number
@@ -754,12 +756,14 @@ export type Database = {
           created_at?: string
           created_by: string
           deal_id?: string | null
+          description?: string | null
           hosting_model?: string | null
           id?: string
           last_edited_by?: string | null
           line_items?: Json
           notes?: string | null
           parent_quote_id?: string | null
+          quote_name?: string | null
           quote_number: string
           status?: string
           total_arr?: number
@@ -777,12 +781,14 @@ export type Database = {
           created_at?: string
           created_by?: string
           deal_id?: string | null
+          description?: string | null
           hosting_model?: string | null
           id?: string
           last_edited_by?: string | null
           line_items?: Json
           notes?: string | null
           parent_quote_id?: string | null
+          quote_name?: string | null
           quote_number?: string
           status?: string
           total_arr?: number
