@@ -170,8 +170,12 @@ export async function generateQuotePdf(quote: {
   doc.text('Quote Summary', 14, y);
   y += 8;
 
-  addRow('Total One-Time:', formatEur(quote.total_onetime));
-  if (quote.contract_discount > 0) addRow('Discount:', `${quote.contract_discount}%`);
+  const grossTotal = quote.total_year1 / (1 - quote.contract_discount / 100) || quote.total_year1;
+
+  addRow('Total Before Discount:', formatEur(grossTotal));
+  if (quote.contract_discount > 0) {
+    addRow(`Discount (${quote.contract_discount}%):`, `- ${formatEur(grossTotal - quote.total_year1)}`);
+  }
   y += 2;
   doc.setDrawColor(0);
   doc.line(14, y - 2, 196, y - 2);
