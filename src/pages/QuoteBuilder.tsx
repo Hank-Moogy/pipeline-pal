@@ -41,6 +41,8 @@ export default function QuoteBuilder() {
   , [settings]);
 
   // Form state
+  const [quoteName, setQuoteName] = useState('');
+  const [quoteDescription, setQuoteDescription] = useState('');
   const [companyName, setCompanyName] = useState(dealCompany || '');
   const [contactPerson, setContactPerson] = useState(dealContact || '');
   const [contactEmail, setContactEmail] = useState(dealEmail || '');
@@ -65,6 +67,8 @@ export default function QuoteBuilder() {
   // Load existing quote for editing
   useEffect(() => {
     if (existingQuote) {
+      setQuoteName((existingQuote as any).quote_name || '');
+      setQuoteDescription((existingQuote as any).description || '');
       setCompanyName(existingQuote.company_name || '');
       setContactPerson(existingQuote.contact_person || '');
       setContactEmail(existingQuote.contact_email || '');
@@ -186,6 +190,8 @@ export default function QuoteBuilder() {
   const handleSave = async (asDraft = true) => {
     if (!user) return;
     const payload = {
+      quote_name: quoteName || null,
+      description: quoteDescription || null,
       company_name: companyName || null,
       contact_person: contactPerson || null,
       contact_email: contactEmail || null,
@@ -259,6 +265,21 @@ export default function QuoteBuilder() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
+            {/* Quote Info */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Quote Details</CardTitle></CardHeader>
+              <CardContent className="grid gap-4">
+                <div>
+                  <Label>Quote Name</Label>
+                  <Input value={quoteName} onChange={e => setQuoteName(e.target.value)} placeholder="e.g. Annual VFX Pipeline License" />
+                </div>
+                <div>
+                  <Label>Description / Context</Label>
+                  <Textarea value={quoteDescription} onChange={e => setQuoteDescription(e.target.value)} placeholder="Explain the context of this quote…" className="min-h-[60px]" />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Client Info */}
             <Card>
               <CardHeader><CardTitle className="text-base">Client Information</CardTitle></CardHeader>
@@ -494,18 +515,17 @@ export default function QuoteBuilder() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span>{formatEur(lineItems.credits.reduce((s, c) => s + c.total_price, 0))}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Support</span><span>{formatEur(lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
                   <Separator />
-                  <div className="flex justify-between font-medium"><span>Subtotal ARR</span><span>{formatEur(totals.totalArr + totals.totalArr * (discount / (100 - discount || 1)))}</span></div>
                   {discount > 0 && (
                     <div className="flex justify-between text-destructive">
                       <span>Discount ({discount}%)</span>
-                      <span>-</span>
+                      <span>-{formatEur((lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0)) * discount / 100)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-xs">Discount %</span>
                     <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                   </div>
-                  <div className="flex justify-between font-semibold text-primary"><span>Total ARR</span><span>{formatEur(totals.totalArr)}</span></div>
+                  <div className="flex justify-between font-semibold text-primary"><span>Recurring Total</span><span>{formatEur(totals.totalArr)}</span></div>
                 </div>
 
                 <Separator />
