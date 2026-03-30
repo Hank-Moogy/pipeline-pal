@@ -791,13 +791,13 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
 
             return (
               <Collapsible key={item.id}>
-                <div className={`rounded-lg border border-border/30 border-l-[3px] ${borderColor} overflow-hidden ${isMago ? 'bg-primary/5' : 'bg-amber-500/5'}`}>
+                <div className={`rounded-lg border border-border/30 border-l-[3px] ${borderColor} ${isMago ? 'bg-primary/5' : 'bg-amber-500/5'}`}>
                   <CollapsibleTrigger asChild>
-                    <button className="w-full p-3 flex flex-col gap-1.5 text-left hover:bg-accent/20 transition-colors group overflow-hidden">
-                      <div className="flex items-center gap-2 w-full min-w-0">
-                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/70" />
-                        <span className="text-xs font-semibold flex-1 truncate text-foreground min-w-0">{item.subject || label}</span>
-                        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform group-data-[state=open]:rotate-180" />
+                    <button className="w-full p-3 flex flex-col gap-1.5 text-left hover:bg-accent/20 transition-colors group">
+                      <div className="flex items-start gap-2 w-full min-w-0">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground/70 mt-0.5" />
+                        <span className="text-xs font-semibold flex-1 text-foreground min-w-0 break-words">{item.subject || label}</span>
+                        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform group-data-[state=open]:rotate-180 mt-0.5" />
                       </div>
                       <div className="flex items-center gap-1.5 pl-[22px] flex-wrap">
                         {isMago ? (
