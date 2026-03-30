@@ -1028,6 +1028,13 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
                 <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{touchpointCount}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex-1 gap-1.5 text-xs">
+              <Receipt className="h-3.5 w-3.5" />
+              Quotes
+              {dealQuotes.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{dealQuotes.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} />
@@ -1040,6 +1047,9 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
           </TabsContent>
           <TabsContent value="touchpoints" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <TouchpointsTab dealId={deal.id} />
+          </TabsContent>
+          <TabsContent value="quotes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <QuotesTab dealId={deal.id} />
           </TabsContent>
         </Tabs>
       </SheetContent>
