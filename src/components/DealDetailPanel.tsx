@@ -437,6 +437,24 @@ function DetailsTab({ deal }: { deal: Deal }) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-1 pb-6 pr-1">
+        {/* Generate Quote CTA */}
+        <div className="px-1 pb-3">
+          <Button
+            size="sm"
+            className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set('dealId', deal.id);
+              if (deal.company) params.set('company', deal.company);
+              if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
+              if (deal.email) params.set('email', deal.email);
+              window.location.href = `/quotes/new?${params.toString()}`;
+            }}
+          >
+            <FileText className="h-4 w-4" /> Generate Quote
+          </Button>
+        </div>
+
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Contact</p>
         <EditableField icon={User} label="First Name" value={deal.first_name} fieldName="first_name" dealId={deal.id} />
         <EditableField icon={User} label="Last Name" value={deal.last_name} fieldName="last_name" dealId={deal.id} />
@@ -480,25 +498,7 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <EditableField label="Closed Date" value={deal.closed_date} fieldName="closed_date" dealId={deal.id} />
         <OwnerSelect deal={deal} />
 
-        <Separator className="my-3 bg-border/30" />
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Actions</p>
-        <div className="px-1 py-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2"
-            onClick={() => {
-              const params = new URLSearchParams();
-              params.set('dealId', deal.id);
-              if (deal.company) params.set('company', deal.company);
-              if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
-              if (deal.email) params.set('email', deal.email);
-              window.location.href = `/quotes/new?${params.toString()}`;
-            }}
-          >
-            <FileText className="h-4 w-4" /> Create Quote
-          </Button>
-        </div>
+
 
         <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
