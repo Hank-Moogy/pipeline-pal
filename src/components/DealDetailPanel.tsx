@@ -842,18 +842,44 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
   );
 }
 
-function QuotesTab({ dealId }: { dealId: string }) {
+function QuotesTab({ deal }: { deal: Deal }) {
   const navigate = useNavigate();
+  const contactName = [deal.first_name, deal.last_name].filter(Boolean).join(' ').trim();
+  const quoteSelect = 'id, quote_number, quote_name, status, total_year1, created_at, quote_type, company_name, contact_person, deal_id';
+
   const { data: quotes = [], isLoading } = useQuery({
-    queryKey: ['deal-quotes', dealId],
+    queryKey: ['deal-quotes', deal.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: linkedQuotes, error: linkedError } = await supabase
         .from('quotes')
-        .select('id, quote_number, quote_name, status, total_year1, created_at, quote_type')
-        .eq('deal_id', dealId)
+        .select(quoteSelect)
+        .eq('deal_id', deal.id)
         .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+
+      if (linkedError) throw linkedError;
+
+      let fallbackQuery = supabase
+        .from('quotes')
+        .select(quoteSelect)
+        .is('deal_id', null);
+
+      if (deal.company?.trim()) {
+        fallbackQuery = fallbackQuery.ilike('company_name', `%${deal.company.trim()}%`);
+      }
+      if (contactName) {
+        fallbackQuery = fallbackQuery.ilike('contact_person', `%${contactName}%`);
+      }
+
+      const { data: fallbackQuotes, error: fallbackError } = await fallbackQuery
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (fallbackError) throw fallbackError;
+
+      const merged = [...(linkedQuotes ?? []), ...(fallbackQuotes ?? [])];
+      return merged
+        .filter((quote, index, self) => self.findIndex((q) => q.id === quote.id) === index)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
