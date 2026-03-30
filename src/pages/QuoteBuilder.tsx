@@ -85,8 +85,19 @@ export default function QuoteBuilder() {
         li.licenses?.forEach(l => { lq[l.type.toLowerCase()] = l.quantity; });
         setLicenseQty(lq);
         const cs: Record<string, number> = {};
-        li.credits?.forEach(c => { cs[c.tier.toLowerCase()] = c.quantity; });
+        const bc: Record<string, { credits: number; discount: number }> = {};
+        li.credits?.forEach(c => {
+          const tierKey = c.tier.toLowerCase();
+          if (tierKey.includes('custom')) {
+            const basePrice = (c.credits_per_pack / 10000) * 10;
+            const appliedDiscount = basePrice > 0 ? Math.round((1 - c.unit_price / basePrice) * 100) : 20;
+            bc['custom'] = { credits: c.credits_per_pack, discount: appliedDiscount };
+          } else {
+            cs[tierKey] = c.quantity;
+          }
+        });
         setCreditSelections(cs);
+        setBulkCredits(bc);
         const ss: Record<string, boolean> = {};
         li.support?.forEach(s => { ss[s.tier.toLowerCase().replace(/[^a-z_]/g, '_')] = true; });
         setSupportSelections(ss);
