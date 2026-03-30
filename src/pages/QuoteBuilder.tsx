@@ -515,18 +515,17 @@ export default function QuoteBuilder() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span>{formatEur(lineItems.credits.reduce((s, c) => s + c.total_price, 0))}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Support</span><span>{formatEur(lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
                   <Separator />
-                  <div className="flex justify-between font-medium"><span>Subtotal ARR</span><span>{formatEur(totals.totalArr + totals.totalArr * (discount / (100 - discount || 1)))}</span></div>
                   {discount > 0 && (
                     <div className="flex justify-between text-destructive">
                       <span>Discount ({discount}%)</span>
-                      <span>-</span>
+                      <span>-{formatEur((lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0)) * discount / 100)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-xs">Discount %</span>
                     <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                   </div>
-                  <div className="flex justify-between font-semibold text-primary"><span>Total ARR</span><span>{formatEur(totals.totalArr)}</span></div>
+                  <div className="flex justify-between font-semibold text-primary"><span>Recurring Total</span><span>{formatEur(totals.totalArr)}</span></div>
                 </div>
 
                 <Separator />

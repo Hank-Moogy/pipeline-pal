@@ -184,7 +184,7 @@ export default function QuoteDetail() {
             <Card>
               <CardHeader><CardTitle className="text-base">Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Total ARR</span><span className="font-medium">{formatEur(quote.total_arr)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Recurring Total</span><span className="font-medium">{formatEur(quote.total_arr)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Total One-Time</span><span className="font-medium">{formatEur(quote.total_onetime)}</span></div>
                 {quote.contract_discount > 0 && (
                   <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>{quote.contract_discount}%</span></div>
