@@ -112,7 +112,11 @@ export function useCreateQuote() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['quotes'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['quotes'] });
+      qc.invalidateQueries({ queryKey: ['deal-quotes'] });
+      qc.invalidateQueries({ queryKey: ['deal-quotes-count'] });
+    },
   });
 }
 
