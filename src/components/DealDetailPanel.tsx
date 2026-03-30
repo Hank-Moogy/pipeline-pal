@@ -481,6 +481,26 @@ function DetailsTab({ deal }: { deal: Deal }) {
         <OwnerSelect deal={deal} />
 
         <Separator className="my-3 bg-border/30" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Actions</p>
+        <div className="px-1 py-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set('dealId', deal.id);
+              if (deal.company) params.set('company', deal.company);
+              if (deal.first_name || deal.last_name) params.set('contact', `${deal.first_name || ''} ${deal.last_name || ''}`.trim());
+              if (deal.email) params.set('email', deal.email);
+              window.location.href = `/quotes/new?${params.toString()}`;
+            }}
+          >
+            <FileText className="h-4 w-4" /> Create Quote
+          </Button>
+        </div>
+
+        <Separator className="my-3 bg-border/30" />
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 px-1">Next Steps</p>
         <EditableNextSteps deal={deal} />
 
