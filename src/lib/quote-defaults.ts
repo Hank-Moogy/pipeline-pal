@@ -100,16 +100,19 @@ export function calculateTotals(items: QuoteLineItems, discount: number) {
   const supportArr = items.support.reduce((s, s2) => s + s2.annual, 0);
   const hostingArr = items.hosting.annual_fee;
 
-  const subtotalArr = licenseArr + creditsArr + supportArr + hostingArr;
-  const discountAmount = subtotalArr * (discount / 100);
-  const totalArr = subtotalArr - discountAmount;
+  const subtotalRecurring = licenseArr + creditsArr + supportArr + hostingArr;
 
   const servicesOnetime = items.services.reduce((s, sv) => s + sv.total, 0);
   const customDevOnetime = items.custom_dev.reduce((s, cd) => s + cd.total, 0);
   const installationOnetime = items.hosting.installation_fee;
-  const totalOnetime = servicesOnetime + customDevOnetime + installationOnetime;
+  const subtotalOnetime = servicesOnetime + customDevOnetime + installationOnetime;
 
-  const totalYear1 = totalArr + totalOnetime;
+  const grandSubtotal = subtotalRecurring + subtotalOnetime;
+  const discountAmount = grandSubtotal * (discount / 100);
+
+  const totalArr = subtotalRecurring - (subtotalRecurring * (discount / 100));
+  const totalOnetime = subtotalOnetime - (subtotalOnetime * (discount / 100));
+  const totalYear1 = grandSubtotal - discountAmount;
 
   return { totalArr, totalOnetime, totalYear1 };
 }
