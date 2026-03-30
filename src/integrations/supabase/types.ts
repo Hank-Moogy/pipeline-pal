@@ -701,6 +701,114 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_settings: {
+        Row: {
+          id: string
+          pricing: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          pricing?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          pricing?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          company_name: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contract_discount: number
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          hosting_model: string | null
+          id: string
+          last_edited_by: string | null
+          line_items: Json
+          notes: string | null
+          parent_quote_id: string | null
+          quote_number: string
+          status: string
+          total_arr: number
+          total_onetime: number
+          total_year1: number
+          updated_at: string
+          valid_until: string | null
+          version: number
+        }
+        Insert: {
+          company_name?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contract_discount?: number
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          hosting_model?: string | null
+          id?: string
+          last_edited_by?: string | null
+          line_items?: Json
+          notes?: string | null
+          parent_quote_id?: string | null
+          quote_number: string
+          status?: string
+          total_arr?: number
+          total_onetime?: number
+          total_year1?: number
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+        }
+        Update: {
+          company_name?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contract_discount?: number
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          hosting_model?: string | null
+          id?: string
+          last_edited_by?: string | null
+          line_items?: Json
+          notes?: string | null
+          parent_quote_id?: string | null
+          quote_number?: string
+          status?: string
+          total_arr?: number
+          total_onetime?: number
+          total_year1?: number
+          updated_at?: string
+          valid_until?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_parent_quote_id_fkey"
+            columns: ["parent_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_content: {
         Row: {
           created_at: string
