@@ -12,8 +12,6 @@ export interface PricingConfig {
     starter: { label: string; credits: number; price: number; discount: number };
     creator: { label: string; credits: number; price: number; discount: number };
     production: { label: string; credits: number; price: number; discount: number };
-    production_bulk: { label: string; credits: number; price: number; discount: number };
-    enterprise_bulk: { label: string; credits: number; price: number; discount: number };
   };
   support: {
     standard: { label: string; annual: number };
@@ -52,8 +50,6 @@ export const DEFAULT_PRICING: PricingConfig = {
     starter: { label: 'Starter', credits: 10000, price: 10, discount: 0 },
     creator: { label: 'Creator', credits: 30000, price: 28, discount: 7 },
     production: { label: 'Studio', credits: 90000, price: 77, discount: 14 },
-    production_bulk: { label: 'Production Bulk', credits: 200000, price: 150, discount: 25 },
-    enterprise_bulk: { label: 'Enterprise Bulk', credits: 500000, price: 325, discount: 35 },
   },
   support: {
     standard: { label: 'Standard (Included)', annual: 0 },
