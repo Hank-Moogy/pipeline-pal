@@ -44,7 +44,11 @@ export default function QuoteBuilder() {
   const [contactPerson, setContactPerson] = useState(dealContact || '');
   const [contactEmail, setContactEmail] = useState(dealEmail || '');
   const [quoteNumber, setQuoteNumber] = useState(generateQuoteNumber());
-  const [validUntil, setValidUntil] = useState('');
+  const [validUntil, setValidUntil] = useState(() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return lastDay.toISOString().split('T')[0];
+  });
   const [notes, setNotes] = useState('');
   const [discount, setDiscount] = useState(0);
 
