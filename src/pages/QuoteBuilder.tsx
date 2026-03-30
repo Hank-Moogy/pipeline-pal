@@ -52,6 +52,7 @@ export default function QuoteBuilder() {
   const [hostingModel, setHostingModel] = useState('saas');
   const [licenseQty, setLicenseQty] = useState<Record<string, number>>({ studio: 0, enterprise: 0 });
   const [creditSelections, setCreditSelections] = useState<Record<string, number>>({});
+  const [bulkCredits, setBulkCredits] = useState<Record<string, { credits: number; discount: number }>>({});
   const [supportSelections, setSupportSelections] = useState<Record<string, boolean>>({ standard: true });
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [customDevQty, setCustomDevQty] = useState<Record<string, number>>({});
