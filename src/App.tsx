@@ -39,6 +39,10 @@ const App = () => (
             <Route path="/agents/social" element={<SocialAgent />} />
             <Route path="/agents/openclaw" element={<OpenClaw />} />
             <Route path="/agents/openclaw/config" element={<OpenClawConfig />} />
+            <Route path="/quotes" element={<Quotes />} />
+            <Route path="/quotes/new" element={<QuoteBuilder />} />
+            <Route path="/quotes/settings" element={<QuoteSettings />} />
+            <Route path="/quotes/:id" element={<QuoteDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

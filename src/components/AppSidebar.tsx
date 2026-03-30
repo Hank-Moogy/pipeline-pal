@@ -27,6 +27,7 @@ import {
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/", icon: BarChart3 },
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
+  { title: "Quotes", url: "/quotes", icon: FileText },
   { title: "Agents ⚠️WIP", url: "/agents", icon: Bot },
 ];
 
