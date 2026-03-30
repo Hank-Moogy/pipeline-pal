@@ -106,7 +106,7 @@ export function useCreateQuote() {
     mutationFn: async (quote: Record<string, any>) => {
       const { data, error } = await supabase
         .from('quotes')
-        .insert(quote)
+        .insert(quote as any)
         .select()
         .single();
       if (error) throw error;
