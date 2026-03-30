@@ -1,4 +1,4 @@
-import { formatEur, type QuoteLineItems } from './quote-defaults';
+import { formatEur, type QuoteLineItems, type PricingConfig } from './quote-defaults';
 
 const COMPANY_ADDRESS = [
   '112 avenue de Paris',

@@ -73,10 +73,16 @@ export default function QuoteSettings() {
             <h1 className="text-2xl font-bold">Quote Pricing Config</h1>
             <p className="text-sm text-muted-foreground">Shared pricing used for all new quotes</p>
           </div>
-          <Button onClick={handleSave} disabled={updateSettings.isPending}>
-            {updateSettings.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-            Save Changes
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => generatePricingCatalogPdf(pricing)}>
+              <FileDown className="h-4 w-4 mr-1" />
+              Download PDF
+            </Button>
+            <Button onClick={handleSave} disabled={updateSettings.isPending}>
+              {updateSettings.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+              Save Changes
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
