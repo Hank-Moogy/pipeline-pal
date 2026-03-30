@@ -1075,7 +1075,7 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
             <TouchpointsTab dealId={deal.id} />
           </TabsContent>
           <TabsContent value="quotes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
-            <QuotesTab dealId={deal.id} />
+            <QuotesTab deal={deal} />
           </TabsContent>
         </Tabs>
       </SheetContent>
