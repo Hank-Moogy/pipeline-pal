@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Building2, User, Users, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin } from 'lucide-react';
+import { Building2, User, Users, DollarSign, Calendar, MapPin, Briefcase, FileText, AlertTriangle, MessageSquare, Send, Loader2, Info, Mail, Phone, Link2, ChevronDown, Mic, Sparkles, Zap, RefreshCw, Plus, ArrowDownLeft, ArrowUpRight, PhoneCall, Video, StickyNote, Linkedin, Receipt } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useNotesForDeal, useAddNote, useUpdateDeal } from '@/hooks/useDeals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -842,6 +842,70 @@ function TouchpointsTab({ dealId }: { dealId: string }) {
   );
 }
 
+function QuotesTab({ dealId }: { dealId: string }) {
+  const navigate = useNavigate();
+  const { data: quotes = [], isLoading } = useQuery({
+    queryKey: ['deal-quotes', dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number, quote_name, status, total_year1, created_at, quote_type')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const fmtVal = (n: number) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+
+  const statusColors: Record<string, string> = {
+    draft: 'bg-muted text-muted-foreground',
+    sent: 'bg-blue-500/10 text-blue-600',
+    accepted: 'bg-green-500/10 text-green-600',
+    rejected: 'bg-destructive/10 text-destructive',
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <ScrollArea className="flex-1">
+        <div className="space-y-2 pb-4 pr-1">
+          {isLoading && (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!isLoading && quotes.length === 0 && (
+            <p className="text-xs text-muted-foreground/60 py-10 text-center">No quotes yet for this deal</p>
+          )}
+          {quotes.map((q) => (
+            <button
+              key={q.id}
+              onClick={() => navigate(`/quotes/${q.id}`)}
+              className="w-full text-left rounded-lg border bg-secondary/50 border-border/30 p-3 space-y-1.5 hover:bg-accent/50 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium truncate">{q.quote_name || q.quote_number}</span>
+                <Badge variant="secondary" className={`text-[10px] shrink-0 ${statusColors[q.status] || ''}`}>
+                  {q.status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{q.quote_number}</span>
+                <span className="font-medium text-foreground">{fmtVal(q.total_year1)}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground/70">
+                {format(new Date(q.created_at), 'MMM d, yyyy')}
+              </p>
+            </button>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
   const navigate = useNavigate();
   const { data: notes = [] } = useNotesForDeal(deal?.id ?? null);
@@ -873,6 +937,19 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
     enabled: !!deal,
   });
   const touchpointCount = emails.length + interactionsCount.length;
+  const { data: dealQuotes = [] } = useQuery({
+    queryKey: ['deal-quotes-count', deal?.id],
+    queryFn: async () => {
+      if (!deal) return [];
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('deal_id', deal.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deal,
+  });
 
   if (!deal) return null;
   const name = [deal.first_name, deal.last_name].filter(Boolean).join(' ') || 'Unknown';
@@ -951,6 +1028,13 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
                 <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{touchpointCount}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex-1 gap-1.5 text-xs">
+              <Receipt className="h-3.5 w-3.5" />
+              Quotes
+              {dealQuotes.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 ml-1">{dealQuotes.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <DetailsTab deal={deal} />
@@ -963,6 +1047,9 @@ export function DealDetailPanel({ deal, open, onClose, uploadId }: Props) {
           </TabsContent>
           <TabsContent value="touchpoints" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
             <TouchpointsTab dealId={deal.id} />
+          </TabsContent>
+          <TabsContent value="quotes" className="flex-1 mt-4 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col outline-none focus:ring-0">
+            <QuotesTab dealId={deal.id} />
           </TabsContent>
         </Tabs>
       </SheetContent>
