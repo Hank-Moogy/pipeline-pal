@@ -133,6 +133,8 @@ export function useUpdateQuote() {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['quotes'] });
       qc.invalidateQueries({ queryKey: ['quote', id] });
+      qc.invalidateQueries({ queryKey: ['deal-quotes'] });
+      qc.invalidateQueries({ queryKey: ['deal-quotes-count'] });
     },
   });
 }
