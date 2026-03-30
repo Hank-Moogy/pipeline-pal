@@ -77,6 +77,7 @@ export default function QuoteBuilder() {
       setValidUntil(existingQuote.valid_until || '');
       setNotes(existingQuote.notes || '');
       setDiscount(existingQuote.contract_discount);
+      setQuoteType(((existingQuote as any).quote_type as any) || 'enterprise_contract');
       const li = existingQuote.line_items as unknown as QuoteLineItems;
       if (li) {
         setHostingModel(li.hosting?.model || 'saas');
