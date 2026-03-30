@@ -67,6 +67,8 @@ export default function QuoteBuilder() {
   // Load existing quote for editing
   useEffect(() => {
     if (existingQuote) {
+      setQuoteName((existingQuote as any).quote_name || '');
+      setQuoteDescription((existingQuote as any).description || '');
       setCompanyName(existingQuote.company_name || '');
       setContactPerson(existingQuote.contact_person || '');
       setContactEmail(existingQuote.contact_email || '');
