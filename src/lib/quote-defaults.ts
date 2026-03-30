@@ -12,8 +12,6 @@ export interface PricingConfig {
     starter: { label: string; credits: number; price: number; discount: number };
     creator: { label: string; credits: number; price: number; discount: number };
     production: { label: string; credits: number; price: number; discount: number };
-    production_bulk: { label: string; credits: number; price: number; discount: number };
-    enterprise_bulk: { label: string; credits: number; price: number; discount: number };
   };
   support: {
     standard: { label: string; annual: number };
