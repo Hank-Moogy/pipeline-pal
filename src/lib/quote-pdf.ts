@@ -11,6 +11,7 @@ export async function generateQuotePdf(quote: {
   quote_number: string;
   quote_name?: string | null;
   description?: string | null;
+  quote_type?: string | null;
   company_name: string | null;
   contact_person: string | null;
   contact_email: string | null;
