@@ -119,7 +119,7 @@ export default function QuoteBuilder() {
         }),
       credits: [
         ...Object.entries(creditSelections)
-          .filter(([key, q]) => q > 0 && !['production_bulk', 'enterprise_bulk'].includes(key))
+          .filter(([, q]) => q > 0)
           .map(([key, qty]) => {
             const cfg = pricing.credits[key as keyof typeof pricing.credits];
             return {
@@ -131,22 +131,22 @@ export default function QuoteBuilder() {
               total_credits: qty * (cfg?.credits || 0),
             };
           }),
-        ...['production_bulk', 'enterprise_bulk']
-          .filter(key => bulkCredits[key]?.credits > 0)
-          .map(key => {
-            const cfg = pricing.credits[key as keyof typeof pricing.credits];
-            const bc = bulkCredits[key];
-            const basePrice = (bc.credits / 10000) * 10; // base price from starter rate
-            const discountedPrice = basePrice * (1 - bc.discount / 100);
-            return {
-              tier: cfg?.label || key,
-              quantity: 1,
-              unit_price: discountedPrice,
-              credits_per_pack: bc.credits,
-              total_price: discountedPrice,
-              total_credits: bc.credits,
-            };
-          }),
+        ...(bulkCredits['custom']?.credits > 0 ? [{
+          tier: 'Custom Credits Pack',
+          quantity: 1,
+          unit_price: (() => {
+            const bc = bulkCredits['custom'];
+            const basePrice = (bc.credits / 10000) * 10;
+            return basePrice * (1 - bc.discount / 100);
+          })(),
+          credits_per_pack: bulkCredits['custom'].credits,
+          total_price: (() => {
+            const bc = bulkCredits['custom'];
+            const basePrice = (bc.credits / 10000) * 10;
+            return basePrice * (1 - bc.discount / 100);
+          })(),
+          total_credits: bulkCredits['custom'].credits,
+        }] : []),
       ],
       support: Object.entries(supportSelections)
         .filter(([, on]) => on)
