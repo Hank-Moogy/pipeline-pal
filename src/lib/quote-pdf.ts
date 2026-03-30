@@ -142,6 +142,14 @@ export async function generateQuotePdf(quote: {
     addSectionTitle('5. Professional Services');
     quote.line_items.services.forEach(s => {
       addRow(`${s.name} × ${s.quantity}`, formatEur(s.total));
+      if (s.name.toLowerCase().includes('discovery') || s.name.toLowerCase().includes('poc')) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Includes 1 onboarding session, 2 follow-up meetings, and Slack support', 18, y);
+        y += 5;
+        doc.setTextColor(0, 0, 0);
+      }
     });
   }
 
