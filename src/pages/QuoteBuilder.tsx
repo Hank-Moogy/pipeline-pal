@@ -53,6 +53,7 @@ export default function QuoteBuilder() {
     return lastDay.toISOString().split('T')[0];
   });
   const [notes, setNotes] = useState('');
+  const [quoteType, setQuoteType] = useState<'one_off' | 'enterprise_contract'>('enterprise_contract');
   const [discount, setDiscount] = useState(0);
 
   // Line item selections
@@ -76,6 +77,7 @@ export default function QuoteBuilder() {
       setValidUntil(existingQuote.valid_until || '');
       setNotes(existingQuote.notes || '');
       setDiscount(existingQuote.contract_discount);
+      setQuoteType(((existingQuote as any).quote_type as any) || 'enterprise_contract');
       const li = existingQuote.line_items as unknown as QuoteLineItems;
       if (li) {
         setHostingModel(li.hosting?.model || 'saas');
@@ -206,6 +208,7 @@ export default function QuoteBuilder() {
       notes: notes || null,
       status: asDraft ? 'draft' : 'sent',
       deal_id: dealId || null,
+      quote_type: quoteType,
       updated_at: new Date().toISOString(),
     };
 
@@ -269,6 +272,18 @@ export default function QuoteBuilder() {
             <Card>
               <CardHeader><CardTitle className="text-base">Quote Details</CardTitle></CardHeader>
               <CardContent className="grid gap-4">
+                <div>
+                  <Label>Quote Type</Label>
+                  <Select value={quoteType} onValueChange={v => setQuoteType(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="one_off">One-off Quote</SelectItem>
+                      <SelectItem value="enterprise_contract">Enterprise Contract</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label>Quote Name</Label>
                   <Input value={quoteName} onChange={e => setQuoteName(e.target.value)} placeholder="e.g. Annual VFX Pipeline License" />
@@ -525,7 +540,7 @@ export default function QuoteBuilder() {
                     <span className="text-muted-foreground text-xs">Discount %</span>
                     <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                   </div>
-                  <div className="flex justify-between font-semibold text-primary"><span>Recurring Total</span><span>{formatEur(totals.totalArr)}</span></div>
+                  <div className="flex justify-between font-semibold text-primary"><span>{quoteType === 'one_off' ? 'Subtotal' : 'Recurring Total'}</span><span>{formatEur(totals.totalArr)}</span></div>
                 </div>
 
                 <Separator />
@@ -541,7 +556,7 @@ export default function QuoteBuilder() {
                 <Separator />
 
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Year 1 Total</span>
+                  <span>{quoteType === 'one_off' ? 'Total' : 'Year 1 Total'}</span>
                   <span className="text-primary">{formatEur(totals.totalYear1)}</span>
                 </div>
               </CardContent>

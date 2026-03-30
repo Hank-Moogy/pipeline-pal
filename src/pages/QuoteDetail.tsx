@@ -48,6 +48,7 @@ export default function QuoteDetail() {
       ...quote,
       quote_name: (quote as any).quote_name,
       description: (quote as any).description,
+      quote_type: (quote as any).quote_type,
       line_items: li,
       creatorName: profileMap[quote.created_by] || undefined,
     });
@@ -184,13 +185,13 @@ export default function QuoteDetail() {
             <Card>
               <CardHeader><CardTitle className="text-base">Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Recurring Total</span><span className="font-medium">{formatEur(quote.total_arr)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{(quote as any).quote_type === 'one_off' ? 'Subtotal' : 'Recurring Total'}</span><span className="font-medium">{formatEur(quote.total_arr)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Total One-Time</span><span className="font-medium">{formatEur(quote.total_onetime)}</span></div>
                 {quote.contract_discount > 0 && (
                   <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>{quote.contract_discount}%</span></div>
                 )}
                 <Separator />
-                <div className="flex justify-between text-lg font-bold"><span>Year 1</span><span className="text-primary">{formatEur(quote.total_year1)}</span></div>
+                <div className="flex justify-between text-lg font-bold"><span>{(quote as any).quote_type === 'one_off' ? 'Total' : 'Year 1'}</span><span className="text-primary">{formatEur(quote.total_year1)}</span></div>
               </CardContent>
             </Card>
 

@@ -740,6 +740,7 @@ export type Database = {
           parent_quote_id: string | null
           quote_name: string | null
           quote_number: string
+          quote_type: string
           status: string
           total_arr: number
           total_onetime: number
@@ -765,6 +766,7 @@ export type Database = {
           parent_quote_id?: string | null
           quote_name?: string | null
           quote_number: string
+          quote_type?: string
           status?: string
           total_arr?: number
           total_onetime?: number
@@ -790,6 +792,7 @@ export type Database = {
           parent_quote_id?: string | null
           quote_name?: string | null
           quote_number?: string
+          quote_type?: string
           status?: string
           total_arr?: number
           total_onetime?: number
