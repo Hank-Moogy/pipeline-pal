@@ -113,19 +113,37 @@ export default function QuoteBuilder() {
             credits: qty * (cfg?.credits_per_year || 0),
           };
         }),
-      credits: Object.entries(creditSelections)
-        .filter(([, q]) => q > 0)
-        .map(([key, qty]) => {
-          const cfg = pricing.credits[key as keyof typeof pricing.credits];
-          return {
-            tier: cfg?.label || key,
-            quantity: qty,
-            unit_price: cfg?.price || 0,
-            credits_per_pack: cfg?.credits || 0,
-            total_price: qty * (cfg?.price || 0),
-            total_credits: qty * (cfg?.credits || 0),
-          };
-        }),
+      credits: [
+        ...Object.entries(creditSelections)
+          .filter(([key, q]) => q > 0 && !['production_bulk', 'enterprise_bulk'].includes(key))
+          .map(([key, qty]) => {
+            const cfg = pricing.credits[key as keyof typeof pricing.credits];
+            return {
+              tier: cfg?.label || key,
+              quantity: qty,
+              unit_price: cfg?.price || 0,
+              credits_per_pack: cfg?.credits || 0,
+              total_price: qty * (cfg?.price || 0),
+              total_credits: qty * (cfg?.credits || 0),
+            };
+          }),
+        ...['production_bulk', 'enterprise_bulk']
+          .filter(key => bulkCredits[key]?.credits > 0)
+          .map(key => {
+            const cfg = pricing.credits[key as keyof typeof pricing.credits];
+            const bc = bulkCredits[key];
+            const basePrice = (bc.credits / 10000) * 10; // base price from starter rate
+            const discountedPrice = basePrice * (1 - bc.discount / 100);
+            return {
+              tier: cfg?.label || key,
+              quantity: 1,
+              unit_price: discountedPrice,
+              credits_per_pack: bc.credits,
+              total_price: discountedPrice,
+              total_credits: bc.credits,
+            };
+          }),
+      ],
       support: Object.entries(supportSelections)
         .filter(([, on]) => on)
         .map(([key]) => {
