@@ -190,6 +190,8 @@ export default function QuoteBuilder() {
   const handleSave = async (asDraft = true) => {
     if (!user) return;
     const payload = {
+      quote_name: quoteName || null,
+      description: quoteDescription || null,
       company_name: companyName || null,
       contact_person: contactPerson || null,
       contact_email: contactEmail || null,
