@@ -273,6 +273,18 @@ export default function QuoteBuilder() {
               <CardHeader><CardTitle className="text-base">Quote Details</CardTitle></CardHeader>
               <CardContent className="grid gap-4">
                 <div>
+                  <Label>Quote Type</Label>
+                  <Select value={quoteType} onValueChange={v => setQuoteType(v as any)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="one_off">One-off Quote</SelectItem>
+                      <SelectItem value="enterprise_contract">Enterprise Contract</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Quote Name</Label>
                   <Input value={quoteName} onChange={e => setQuoteName(e.target.value)} placeholder="e.g. Annual VFX Pipeline License" />
                 </div>
