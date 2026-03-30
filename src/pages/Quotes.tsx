@@ -45,14 +45,14 @@ export default function Quotes() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Quotes</h1>
             <p className="text-sm text-muted-foreground">Manage and track all your quotes</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/quotes/settings')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/quotes/settings')}>
               <Settings className="h-4 w-4 mr-1" /> Pricing Config
             </Button>
             <Button size="sm" onClick={() => navigate('/quotes/new')}>
