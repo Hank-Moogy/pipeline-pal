@@ -48,6 +48,7 @@ export default function QuoteDetail() {
       ...quote,
       quote_name: (quote as any).quote_name,
       description: (quote as any).description,
+      quote_type: (quote as any).quote_type,
       line_items: li,
       creatorName: profileMap[quote.created_by] || undefined,
     });

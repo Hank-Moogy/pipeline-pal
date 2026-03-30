@@ -556,7 +556,7 @@ export default function QuoteBuilder() {
                 <Separator />
 
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Year 1 Total</span>
+                  <span>{quoteType === 'one_off' ? 'Total' : 'Year 1 Total'}</span>
                   <span className="text-primary">{formatEur(totals.totalYear1)}</span>
                 </div>
               </CardContent>

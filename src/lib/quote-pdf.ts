@@ -176,9 +176,12 @@ export async function generateQuotePdf(quote: {
   doc.setDrawColor(0);
   doc.line(14, y - 2, 196, y - 2);
 
+  const isOneOff = quote.quote_type === 'one_off';
+  const totalLabel = isOneOff ? 'Total' : 'Year 1 Total';
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Year 1 Total: ${formatEur(quote.total_year1)}`, 14, y + 4);
+  doc.text(`${totalLabel}: ${formatEur(quote.total_year1)}`, 14, y + 4);
   y += 10;
 
   // ── Notes ──
