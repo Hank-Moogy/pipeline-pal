@@ -30,8 +30,7 @@ const mcpServer = new McpServer({
 });
 
 // Tool 1: Pipeline Summary
-mcpServer.tool({
-  name: "get_pipeline_summary",
+mcpServer.tool("get_pipeline_summary", {
   description:
     "Get an overview of the pipeline: deal counts by status, total value, stale deal count, and deals grouped by owner.",
   inputSchema: {
