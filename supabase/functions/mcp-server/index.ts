@@ -30,8 +30,7 @@ const mcpServer = new McpServer({
 });
 
 // Tool 1: Pipeline Summary
-mcpServer.tool({
-  name: "get_pipeline_summary",
+mcpServer.tool("get_pipeline_summary", {
   description:
     "Get an overview of the pipeline: deal counts by status, total value, stale deal count, and deals grouped by owner.",
   inputSchema: {
@@ -96,8 +95,7 @@ mcpServer.tool({
 });
 
 // Tool 2: Stale Deals
-mcpServer.tool({
-  name: "get_stale_deals",
+mcpServer.tool("get_stale_deals", {
   description:
     "List deals with no interaction in N days (default 7), sorted by deal value descending. Useful for identifying urgent follow-ups.",
   inputSchema: {
@@ -166,8 +164,7 @@ mcpServer.tool({
 });
 
 // Tool 3: Deal Details
-mcpServer.tool({
-  name: "get_deal_details",
+mcpServer.tool("get_deal_details", {
   description:
     "Get full context for a specific deal by company name or deal ID: contacts, notes, and recent interactions.",
   inputSchema: {
@@ -276,8 +273,7 @@ mcpServer.tool({
 });
 
 // Tool 4: Suggest Next Actions
-mcpServer.tool({
-  name: "suggest_next_actions",
+mcpServer.tool("suggest_next_actions", {
   description:
     "Get a prioritized list of deals needing follow-up, ranked by urgency (staleness × deal value). Returns reasoning for each.",
   inputSchema: {
@@ -355,8 +351,7 @@ mcpServer.tool({
 });
 
 // Tool 5: Search Deals
-mcpServer.tool({
-  name: "search_deals",
+mcpServer.tool("search_deals", {
   description:
     "Search deals by company name, owner, status, or vertical. Returns matching deals with key fields.",
   inputSchema: {
@@ -438,8 +433,7 @@ async function resolveDeal(sb: ReturnType<typeof getSupabase>, { deal_id, compan
 }
 
 // Tool 6: Update Deal Status
-mcpServer.tool({
-  name: "update_deal_status",
+mcpServer.tool("update_deal_status", {
   description: "Update a deal's status (e.g. move to Negotiation, Closed Won, Closed Lost). Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
@@ -470,8 +464,7 @@ mcpServer.tool({
 });
 
 // Tool 7: Add Deal Note
-mcpServer.tool({
-  name: "add_deal_note",
+mcpServer.tool("add_deal_note", {
   description: "Add a note to a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
@@ -502,8 +495,7 @@ mcpServer.tool({
 });
 
 // Tool 8: Add Interaction
-mcpServer.tool({
-  name: "add_interaction",
+mcpServer.tool("add_interaction", {
   description: "Log an interaction (email, call, meeting) on a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
@@ -550,8 +542,7 @@ mcpServer.tool({
 });
 
 // Tool 9: Get Deal Quotes
-mcpServer.tool({
-  name: "get_deal_quotes",
+mcpServer.tool("get_deal_quotes", {
   description: "Get all quotes attached to a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
