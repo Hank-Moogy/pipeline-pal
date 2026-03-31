@@ -495,8 +495,7 @@ mcpServer.tool("add_deal_note", {
 });
 
 // Tool 8: Add Interaction
-mcpServer.tool({
-  name: "add_interaction",
+mcpServer.tool("add_interaction", {
   description: "Log an interaction (email, call, meeting) on a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
