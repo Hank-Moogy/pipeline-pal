@@ -84,6 +84,8 @@ export const DEFAULT_PRICING: PricingConfig = {
     medium: { label: 'Medium Effort', price: 5000, description: 'Feature enhancements, integrations' },
     high: { label: 'High Effort', price: 15000, description: 'Major features, complex integrations' },
   },
+  base_credit_price: 10,
+  base_credit_unit: 10000,
   production: {
     credits_per_second: 169,
     buffer_percent: 20,

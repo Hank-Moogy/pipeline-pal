@@ -588,7 +588,7 @@ export default function QuoteBuilder() {
                     </div>
                     {(bulkCredits['custom']?.credits || 0) > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        {bulkCredits['custom'].credits.toLocaleString()} credits at {bulkCredits['custom']?.discount || 20}% discount = {formatEur((bulkCredits['custom'].credits / 10000) * 10 * (1 - (bulkCredits['custom']?.discount || 20) / 100))}
+                        {bulkCredits['custom'].credits.toLocaleString()} credits at {bulkCredits['custom']?.discount || 20}% discount = {formatEur((bulkCredits['custom'].credits / (pricing.base_credit_unit || 10000)) * (pricing.base_credit_price || 10) * (1 - (bulkCredits['custom']?.discount || 20) / 100))}
                       </p>
                     )}
                   </div>

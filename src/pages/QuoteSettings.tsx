@@ -87,6 +87,15 @@ export default function QuoteSettings() {
           </div>
         </div>
 
+        <Card>
+          <CardHeader><CardTitle className="text-base">Base Credit Rate</CardTitle></CardHeader>
+          <CardContent className="space-y-1">
+            <PriceInput label="Base Price" value={pricing.base_credit_price ?? 10} onChange={v => update(['base_credit_price'], v)} />
+            <PriceInput label="Per Credits" value={pricing.base_credit_unit ?? 10000} onChange={v => update(['base_credit_unit'], v)} />
+            <p className="text-xs text-muted-foreground">All credit costs are calculated as €{pricing.base_credit_price ?? 10} per {(pricing.base_credit_unit ?? 10000).toLocaleString()} credits</p>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader><CardTitle className="text-base">Hosting</CardTitle></CardHeader>
