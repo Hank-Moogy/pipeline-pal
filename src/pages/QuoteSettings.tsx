@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save, FileDown } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { generatePricingCatalogPdf } from '@/lib/quote-pdf';
 import { useQuoteSettings, useUpdateQuoteSettings } from '@/hooks/useQuotes';
 import { DEFAULT_PRICING, type PricingConfig } from '@/lib/quote-defaults';
