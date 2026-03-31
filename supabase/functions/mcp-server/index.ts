@@ -585,11 +585,12 @@ mcpServer.tool("get_deal_quotes", {
   },
 });
 
-// MCP transport
+// MCP transport — bind returns a fetch handler
 const transport = new StreamableHttpTransport();
+const httpHandler = transport.bind(mcpServer);
 
 app.all("/*", async (c) => {
-  return await transport.handleRequest(c.req.raw, mcpServer);
+  return await httpHandler(c.req.raw);
 });
 
 Deno.serve(app.fetch);
