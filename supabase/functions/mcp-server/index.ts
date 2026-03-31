@@ -542,8 +542,7 @@ mcpServer.tool("add_interaction", {
 });
 
 // Tool 9: Get Deal Quotes
-mcpServer.tool({
-  name: "get_deal_quotes",
+mcpServer.tool("get_deal_quotes", {
   description: "Get all quotes attached to a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
