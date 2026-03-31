@@ -523,7 +523,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 3. Credits */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">3. Credits Bundle</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
