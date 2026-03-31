@@ -279,7 +279,7 @@ export default function QuoteBuilder() {
       contact_email: contactEmail || null,
       quote_number: quoteNumber,
       hosting_model: hostingModel,
-      line_items: lineItems as any,
+      line_items: finalLineItems as any,
       total_arr: totals.totalArr,
       total_onetime: totals.totalOnetime,
       total_year1: totals.totalYear1,
