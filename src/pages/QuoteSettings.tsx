@@ -18,7 +18,7 @@ function PriceInput({ label, value, onChange, suffix }: { label: string; value: 
         <span className="text-xs text-muted-foreground">€</span>
         <Input
           type="number"
-          value={value}
+          value={value || ''}
           onChange={e => onChange(Number(e.target.value) || 0)}
           className="w-28 h-8 text-sm text-right"
         />

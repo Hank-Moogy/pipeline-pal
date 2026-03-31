@@ -410,19 +410,19 @@ export default function QuoteBuilder() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <Label>Length (minutes)</Label>
-                      <Input type="number" min={0} value={prodLengthMin} onChange={e => setProdLengthMin(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                      <Input type="number" min={0} value={prodLengthMin || ''} onChange={e => setProdLengthMin(Number(e.target.value) || 0)} className="h-8 text-sm" />
                     </div>
                     <div>
                       <Label>Extra seconds</Label>
-                      <Input type="number" min={0} max={59} value={prodLengthSec} onChange={e => setProdLengthSec(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                      <Input type="number" min={0} max={59} value={prodLengthSec || ''} onChange={e => setProdLengthSec(Number(e.target.value) || 0)} className="h-8 text-sm" />
                     </div>
                     <div>
                       <Label>Number of Shots</Label>
-                      <Input type="number" min={0} value={prodShots} onChange={e => setProdShots(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                      <Input type="number" min={0} value={prodShots || ''} onChange={e => setProdShots(Number(e.target.value) || 0)} className="h-8 text-sm" />
                     </div>
                     <div>
                       <Label>Image Generations</Label>
-                      <Input type="number" min={0} value={prodImageGens} onChange={e => setProdImageGens(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                      <Input type="number" min={0} value={prodImageGens || ''} onChange={e => setProdImageGens(Number(e.target.value) || 0)} className="h-8 text-sm" />
                     </div>
                   </div>
 
@@ -515,7 +515,7 @@ export default function QuoteBuilder() {
                       </div>
                       <Input
                         type="number" min={0}
-                        value={licenseQty[key] || 0}
+                        value={licenseQty[key] || ''}
                         onChange={e => setLicenseQty(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
                         className="w-20 h-8 text-sm text-right"
                       />
@@ -541,7 +541,7 @@ export default function QuoteBuilder() {
                       </div>
                       <Input
                         type="number" min={0}
-                        value={creditSelections[key] || 0}
+                        value={creditSelections[key] || ''}
                         onChange={e => setCreditSelections(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
                         className="w-20 h-8 text-sm text-right"
                       />
@@ -631,7 +631,7 @@ export default function QuoteBuilder() {
                       </div>
                       <Input
                         type="number" min={0}
-                        value={serviceQty[s.label] || 0}
+                        value={serviceQty[s.label] || ''}
                         onChange={e => setServiceQty(prev => ({ ...prev, [s.label]: Number(e.target.value) || 0 }))}
                         className="w-20 h-8 text-sm text-right"
                       />
@@ -654,7 +654,7 @@ export default function QuoteBuilder() {
                       </div>
                       <Input
                         type="number" min={0}
-                        value={customDevQty[key] || 0}
+                        value={customDevQty[key] || ''}
                         onChange={e => setCustomDevQty(prev => ({ ...prev, [key]: Number(e.target.value) || 0 }))}
                         className="w-20 h-8 text-sm text-right"
                       />
@@ -696,7 +696,7 @@ export default function QuoteBuilder() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground text-xs">Discount %</span>
-                        <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
+                        <Input type="number" min={0} max={100} value={discount || ''} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                       </div>
                       {discount > 0 && (
                         <div className="flex justify-between text-destructive">
@@ -733,7 +733,7 @@ export default function QuoteBuilder() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground text-xs">Discount %</span>
-                        <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
+                        <Input type="number" min={0} max={100} value={discount || ''} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
                       </div>
                       {discount > 0 && (
                         <div className="flex justify-between text-destructive">
