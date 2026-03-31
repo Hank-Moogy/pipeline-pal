@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { DEFAULT_PRICING } from '@/lib/quote-defaults';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -36,9 +37,11 @@ export default function QuoteBuilder() {
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
 
-  const pricing = useMemo(() =>
-    (settings?.pricing as unknown as PricingConfig) || null
-  , [settings]);
+  const pricing = useMemo(() => {
+    const saved = (settings?.pricing as unknown as PricingConfig) || null;
+    if (!saved) return null;
+    return { ...DEFAULT_PRICING, ...saved, production: { ...DEFAULT_PRICING.production, ...(saved.production || {}) } };
+  }, [settings]);
 
   // Form state
   const [quoteName, setQuoteName] = useState('');
