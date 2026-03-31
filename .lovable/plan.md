@@ -1,22 +1,48 @@
 
 
-## Make Base Credit Cost Configurable (Global)
+## Extend MCP Server with Write Tools & Quote Access
 
-The base credit rate (€10 per 10,000 credits) should be a global setting used by **all** quote types — standard quotes (credit pack pricing), enterprise contracts, and the production calculator.
+### Current State
+The MCP server (`supabase/functions/mcp-server/index.ts`) has 5 read-only tools covering pipeline summary, stale deals, deal details, next actions, and search. It uses bearer token auth via `MCP_AUTH_TOKEN`.
 
-### Changes
+### New Tools to Add
 
-**1. `src/lib/quote-defaults.ts`**
-- Add top-level `base_credit_price: number` (default: 10) and `base_credit_unit: number` (default: 10000) to `PricingConfig` (not nested under `production`)
+**Tool 6: `update_deal_status`**
+- Input: `deal_id` (or `company_name`), `new_status`, optional `lost_reason`
+- Resolves deal by ID or company name, updates status (and `lost_reason` if closing as lost)
+- Returns confirmation with old → new status
 
-**2. `src/pages/QuoteSettings.tsx`**
-- Add a small "Base Credit Rate" card (or section at top) with two inputs: "Base Price (€)" and "Per Credits"
+**Tool 7: `add_deal_note`**
+- Input: `deal_id` (or `company_name`), `content`, optional `author`
+- Inserts a new row into `deal_notes`
+- Returns confirmation
 
-**3. `src/pages/QuoteBuilder.tsx`**
-- Replace all hardcoded `(credits / 10000) * 10` with `(credits / cfg.base_credit_unit) * cfg.base_credit_price` in both standard quote credit pack calculations and production calculator cost
+**Tool 8: `add_interaction`**
+- Input: `deal_id` (or `company_name`), `interaction_type` (email/call/meeting/other), `subject`, optional `body`, optional `contact_email`, optional `occurred_at`
+- Inserts into `deal_interactions` (uses service role, sets a system user_id)
+- Returns confirmation
 
-**4. `src/pages/QuoteDetail.tsx`**
-- Same replacement for any credit cost display logic
+**Tool 9: `get_deal_quotes`**
+- Input: `deal_id` (or `company_name`)
+- Queries `quotes` table filtering by `deal_id`
+- Returns quote number, name, type, status, totals, valid_until, line items summary
 
-3–4 files, ~20 lines changed.
+### Implementation Details
+
+**Single file change:** `supabase/functions/mcp-server/index.ts`
+
+- Add a shared `resolveDeal(sb, { deal_id, company_name })` helper to avoid duplicating the lookup logic across tools
+- Write tools use the service role key (already configured) so RLS isn't a blocker
+- For `add_interaction`, we need a `user_id` — we'll use a "system" approach: query the first user from `profiles` or accept an optional `user_id` parameter
+- No database changes needed — all tables and columns already exist
+
+### Security Note
+The MCP server already validates `MCP_AUTH_TOKEN` on every request, so write access is gated behind that shared secret. Only team members with the token in their Claude Desktop config can make changes.
+
+### How Your Team Uses It
+Your team connects Claude Desktop to this MCP server (same as today). They can now say things like:
+- "Move the Acme deal to Negotiation"
+- "Add a note to the Nike deal: they want a demo next Tuesday"
+- "Log a call with Adidas about pricing concerns"
+- "Show me all quotes for the BMW deal"
 
