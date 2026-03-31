@@ -65,6 +65,14 @@ export default function QuoteBuilder() {
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [customDevQty, setCustomDevQty] = useState<Record<string, number>>({});
 
+  // Production calculator state
+  const [prodLengthMin, setProdLengthMin] = useState(0);
+  const [prodLengthSec, setProdLengthSec] = useState(0);
+  const [prodShots, setProdShots] = useState(0);
+  const [prodImageGens, setProdImageGens] = useState(0);
+  const [prodDifficulty, setProdDifficulty] = useState<'simple' | 'medium' | 'complex'>('medium');
+  const [prodCreditDiscount, setProdCreditDiscount] = useState(20);
+
   // Load existing quote for editing
   useEffect(() => {
     if (existingQuote) {
