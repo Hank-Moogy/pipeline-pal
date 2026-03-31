@@ -351,8 +351,7 @@ mcpServer.tool("suggest_next_actions", {
 });
 
 // Tool 5: Search Deals
-mcpServer.tool({
-  name: "search_deals",
+mcpServer.tool("search_deals", {
   description:
     "Search deals by company name, owner, status, or vertical. Returns matching deals with key fields.",
   inputSchema: {
