@@ -34,6 +34,8 @@ export interface PricingConfig {
     medium: { label: string; price: number; description: string };
     high: { label: string; price: number; description: string };
   };
+  base_credit_price: number;
+  base_credit_unit: number;
   production: {
     credits_per_second: number;
     buffer_percent: number;
