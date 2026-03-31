@@ -103,6 +103,23 @@ export interface QuoteLineItems {
   custom_dev: Array<{ type: string; quantity: number; unit_price: number; total: number }>;
 }
 
+export interface ProductionLineItems {
+  length_seconds: number;
+  num_shots: number;
+  num_image_gens: number;
+  difficulty: 'simple' | 'medium' | 'complex';
+  iteration_rate: number;
+  multiplier: number;
+  effective_render_seconds: number;
+  rendering_credits: number;
+  image_gen_credits: number;
+  subtotal_credits: number;
+  buffer_percent: number;
+  total_credits: number;
+  credit_discount: number;
+  total_cost: number;
+}
+
 export function emptyLineItems(): QuoteLineItems {
   return {
     hosting: { model: 'saas', installation_fee: 0, annual_fee: 0 },
