@@ -95,8 +95,7 @@ mcpServer.tool("get_pipeline_summary", {
 });
 
 // Tool 2: Stale Deals
-mcpServer.tool({
-  name: "get_stale_deals",
+mcpServer.tool("get_stale_deals", {
   description:
     "List deals with no interaction in N days (default 7), sorted by deal value descending. Useful for identifying urgent follow-ups.",
   inputSchema: {
