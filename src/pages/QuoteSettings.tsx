@@ -35,7 +35,8 @@ export default function QuoteSettings() {
 
   useEffect(() => {
     if (settings?.pricing) {
-      setPricing(settings.pricing as unknown as PricingConfig);
+      const saved = settings.pricing as unknown as PricingConfig;
+      setPricing({ ...DEFAULT_PRICING, ...saved, production: { ...DEFAULT_PRICING.production, ...(saved.production || {}) } });
     }
   }, [settings]);
 
