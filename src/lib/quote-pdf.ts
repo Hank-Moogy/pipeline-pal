@@ -109,16 +109,23 @@ export async function generateQuotePdf(quote: {
   if (quote.contact_person) addRow('Contact:', quote.contact_person);
   if (quote.contact_email) addRow('Email:', quote.contact_email);
 
+  const addItem = (label: string) => {
+    if (y > 275) { doc.addPage(); y = 20; }
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label, 14, y);
+    y += 6;
+  };
+
   // ── Hosting ──
   addSectionTitle('1. Hosting');
-  addRow('Model:', quote.line_items.hosting?.model || 'N/A');
-  if (quote.line_items.hosting?.installation_fee) addRow('Installation Fee:', formatEur(quote.line_items.hosting.installation_fee));
+  addItem(quote.line_items.hosting?.model || 'N/A');
 
   // ── Licenses ──
   if (quote.line_items.licenses?.length) {
     addSectionTitle('2. Licenses');
     quote.line_items.licenses.forEach(l => {
-      addRow(`${l.type} × ${l.quantity}`, formatEur(l.total));
+      addItem(`${l.type} × ${l.quantity}`);
     });
   }
 
@@ -126,7 +133,8 @@ export async function generateQuotePdf(quote: {
   if (quote.line_items.credits?.length) {
     addSectionTitle('3. Credits');
     quote.line_items.credits.forEach(c => {
-      addRow(`${c.tier} × ${c.quantity} (${c.total_credits.toLocaleString()} credits)`, formatEur(c.total_price));
+      const isFree = c.total_price === 0;
+      addItem(`${c.tier} — ${c.total_credits.toLocaleString()} credits${isFree ? '  (Free)' : ''}`);
     });
   }
 
@@ -134,7 +142,7 @@ export async function generateQuotePdf(quote: {
   if (quote.line_items.support?.length) {
     addSectionTitle('4. Support & SLA');
     quote.line_items.support.forEach(s => {
-      addRow(s.tier, formatEur(s.annual));
+      addItem(s.tier);
     });
   }
 
@@ -142,7 +150,7 @@ export async function generateQuotePdf(quote: {
   if (quote.line_items.services?.length) {
     addSectionTitle('5. Professional Services');
     quote.line_items.services.forEach(s => {
-      addRow(`${s.name} × ${s.quantity}`, formatEur(s.total));
+      addItem(`${s.name} × ${s.quantity}`);
       if (s.name.toLowerCase().includes('discovery') || s.name.toLowerCase().includes('poc')) {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
@@ -158,7 +166,7 @@ export async function generateQuotePdf(quote: {
   if (quote.line_items.custom_dev?.length) {
     addSectionTitle('6. Custom Development');
     quote.line_items.custom_dev.forEach(c => {
-      addRow(`${c.type} × ${c.quantity}`, formatEur(c.total));
+      addItem(`${c.type} × ${c.quantity}`);
     });
   }
 
