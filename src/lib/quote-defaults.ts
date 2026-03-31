@@ -101,6 +101,7 @@ export interface QuoteLineItems {
   support: Array<{ tier: string; annual: number }>;
   services: Array<{ name: string; quantity: number; unit_price: number; unit: string; total: number }>;
   custom_dev: Array<{ type: string; quantity: number; unit_price: number; total: number }>;
+  production?: ProductionLineItems;
 }
 
 export interface ProductionLineItems {
