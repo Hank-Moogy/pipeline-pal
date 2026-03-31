@@ -500,7 +500,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 2. Licenses */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">2. License Selection</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
