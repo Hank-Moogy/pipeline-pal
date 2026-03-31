@@ -34,6 +34,16 @@ export interface PricingConfig {
     medium: { label: string; price: number; description: string };
     high: { label: string; price: number; description: string };
   };
+  production: {
+    credits_per_second: number;
+    buffer_percent: number;
+    image_gen_credits: number;
+    difficulty: {
+      simple: { label: string; multiplier: number; iteration_rate: number };
+      medium: { label: string; multiplier: number; iteration_rate: number };
+      complex: { label: string; multiplier: number; iteration_rate: number };
+    };
+  };
 }
 
 export const DEFAULT_PRICING: PricingConfig = {
