@@ -164,8 +164,7 @@ mcpServer.tool("get_stale_deals", {
 });
 
 // Tool 3: Deal Details
-mcpServer.tool({
-  name: "get_deal_details",
+mcpServer.tool("get_deal_details", {
   description:
     "Get full context for a specific deal by company name or deal ID: contacts, notes, and recent interactions.",
   inputSchema: {
