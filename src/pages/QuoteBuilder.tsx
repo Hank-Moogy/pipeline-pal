@@ -399,8 +399,83 @@ export default function QuoteBuilder() {
               </CardContent>
             </Card>
 
+            {/* Production Calculator */}
+            {quoteType === 'production_calculator' && pricing?.production && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Production Calculator</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label>Length (minutes)</Label>
+                      <Input type="number" min={0} value={prodLengthMin} onChange={e => setProdLengthMin(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Extra seconds</Label>
+                      <Input type="number" min={0} max={59} value={prodLengthSec} onChange={e => setProdLengthSec(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Number of Shots</Label>
+                      <Input type="number" min={0} value={prodShots} onChange={e => setProdShots(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Image Generations</Label>
+                      <Input type="number" min={0} value={prodImageGens} onChange={e => setProdImageGens(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label>Shot Difficulty</Label>
+                      <Select value={prodDifficulty} onValueChange={v => setProdDifficulty(v as any)}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(pricing.production.difficulty).map(([key, d]) => (
+                            <SelectItem key={key} value={key}>{d.label} ({d.multiplier}× / +{Math.round(d.iteration_rate * 100)}% iterations)</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Credit Discount</Label>
+                      <Select value={String(prodCreditDiscount)} onValueChange={v => setProdCreditDiscount(Number(v))}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[0, 20, 25, 30, 35, 100].map(d => (
+                            <SelectItem key={d} value={String(d)}>{d}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {prodCalc && (
+                    <div className="rounded-md bg-muted/50 p-4 space-y-2 text-sm">
+                      <p className="font-medium text-base">Calculation Breakdown</p>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Base render time</span><span>{Math.floor(prodCalc.length_seconds / 60)}m {prodCalc.length_seconds % 60}s ({prodCalc.length_seconds}s)</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Iteration rate (+{Math.round(prodCalc.iteration_rate * 100)}%)</span><span>{Math.floor(prodCalc.effective_render_seconds / 60)}m {prodCalc.effective_render_seconds % 60}s effective</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Difficulty multiplier</span><span>×{prodCalc.multiplier}</span></div>
+                      <Separator />
+                      <div className="flex justify-between"><span className="text-muted-foreground">Rendering credits</span><span>{prodCalc.rendering_credits.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Image gen credits</span><span>{prodCalc.image_gen_credits.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Buffer (+{prodCalc.buffer_percent}%)</span><span>{(prodCalc.total_credits - prodCalc.subtotal_credits).toLocaleString()}</span></div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold"><span>Total credits</span><span>{prodCalc.total_credits.toLocaleString()}</span></div>
+                      {prodCalc.credit_discount > 0 && (
+                        <div className="flex justify-between text-muted-foreground"><span>Credit discount</span><span>{prodCalc.credit_discount}%</span></div>
+                      )}
+                      <div className="flex justify-between font-bold text-primary"><span>Rendering Cost</span><span>{formatEur(prodCalc.total_cost)}</span></div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* 1. Hosting */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">1. Hosting Scenario</CardTitle></CardHeader>
                 <CardContent>
