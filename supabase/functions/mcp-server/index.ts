@@ -464,8 +464,7 @@ mcpServer.tool("update_deal_status", {
 });
 
 // Tool 7: Add Deal Note
-mcpServer.tool({
-  name: "add_deal_note",
+mcpServer.tool("add_deal_note", {
   description: "Add a note to a deal. Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
