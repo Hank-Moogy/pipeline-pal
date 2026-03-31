@@ -53,7 +53,7 @@ export default function QuoteBuilder() {
     return lastDay.toISOString().split('T')[0];
   });
   const [notes, setNotes] = useState('');
-  const [quoteType, setQuoteType] = useState<'one_off' | 'enterprise_contract'>('enterprise_contract');
+  const [quoteType, setQuoteType] = useState<'one_off' | 'enterprise_contract' | 'production_calculator'>('enterprise_contract');
   const [discount, setDiscount] = useState(0);
 
   // Line item selections
