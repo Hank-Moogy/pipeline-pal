@@ -82,6 +82,16 @@ export const DEFAULT_PRICING: PricingConfig = {
     medium: { label: 'Medium Effort', price: 5000, description: 'Feature enhancements, integrations' },
     high: { label: 'High Effort', price: 15000, description: 'Major features, complex integrations' },
   },
+  production: {
+    credits_per_second: 169,
+    buffer_percent: 20,
+    image_gen_credits: 500,
+    difficulty: {
+      simple: { label: 'Simple', multiplier: 1, iteration_rate: 0.70 },
+      medium: { label: 'Medium', multiplier: 1.5, iteration_rate: 0.80 },
+      complex: { label: 'Complex', multiplier: 2, iteration_rate: 0.90 },
+    },
+  },
 };
 
 export interface QuoteLineItems {
