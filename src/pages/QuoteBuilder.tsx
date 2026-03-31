@@ -231,7 +231,7 @@ export default function QuoteBuilder() {
     const imageGenCredits = prodImageGens * cfg.image_gen_credits;
     const subtotal = renderingCredits + imageGenCredits;
     const totalCredits = Math.round(subtotal * (1 + cfg.buffer_percent / 100));
-    const basePrice = (totalCredits / 10000) * 10;
+    const basePrice = (totalCredits / (pricing.base_credit_unit || 10000)) * (pricing.base_credit_price || 10);
     const totalCost = basePrice * (1 - prodCreditDiscount / 100);
 
     return {
