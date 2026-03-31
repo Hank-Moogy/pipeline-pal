@@ -115,6 +115,17 @@ export default function QuoteBuilder() {
         const cd: Record<string, number> = {};
         li.custom_dev?.forEach(c => { cd[c.type.toLowerCase()] = c.quantity; });
         setCustomDevQty(cd);
+
+        // Load production data
+        if (li.production) {
+          const p = li.production;
+          setProdLengthMin(Math.floor(p.length_seconds / 60));
+          setProdLengthSec(p.length_seconds % 60);
+          setProdShots(p.num_shots);
+          setProdImageGens(p.num_image_gens);
+          setProdDifficulty(p.difficulty);
+          setProdCreditDiscount(p.credit_discount);
+        }
       }
     }
   }, [existingQuote]);
