@@ -217,7 +217,57 @@ export default function QuoteBuilder() {
     };
   }, [pricing, hostingModel, licenseQty, creditSelections, bulkCredits, supportSelections, serviceQty, customDevQty]);
 
-  const totals = useMemo(() => calculateTotals(lineItems, discount), [lineItems, discount]);
+  // Production calculation
+  const prodCalc = useMemo((): ProductionLineItems | undefined => {
+    if (quoteType !== 'production_calculator' || !pricing?.production) return undefined;
+    const cfg = pricing.production;
+    const diff = cfg.difficulty[prodDifficulty];
+    const baseSeconds = prodLengthMin * 60 + prodLengthSec;
+    const effectiveSeconds = Math.round(baseSeconds * (1 + diff.iteration_rate));
+    const renderingCredits = Math.round(effectiveSeconds * cfg.credits_per_second * diff.multiplier);
+    const imageGenCredits = prodImageGens * cfg.image_gen_credits;
+    const subtotal = renderingCredits + imageGenCredits;
+    const totalCredits = Math.round(subtotal * (1 + cfg.buffer_percent / 100));
+    const basePrice = (totalCredits / 10000) * 10;
+    const totalCost = basePrice * (1 - prodCreditDiscount / 100);
+
+    return {
+      length_seconds: baseSeconds,
+      num_shots: prodShots,
+      num_image_gens: prodImageGens,
+      difficulty: prodDifficulty,
+      iteration_rate: diff.iteration_rate,
+      multiplier: diff.multiplier,
+      effective_render_seconds: effectiveSeconds,
+      rendering_credits: renderingCredits,
+      image_gen_credits: imageGenCredits,
+      subtotal_credits: subtotal,
+      buffer_percent: cfg.buffer_percent,
+      total_credits: totalCredits,
+      credit_discount: prodCreditDiscount,
+      total_cost: totalCost,
+    };
+  }, [quoteType, pricing, prodLengthMin, prodLengthSec, prodShots, prodImageGens, prodDifficulty, prodCreditDiscount]);
+
+  // Merge production into line items for save
+  const finalLineItems = useMemo((): QuoteLineItems => {
+    if (prodCalc) {
+      return { ...lineItems, production: prodCalc };
+    }
+    return lineItems;
+  }, [lineItems, prodCalc]);
+
+  const totals = useMemo(() => {
+    if (quoteType === 'production_calculator' && prodCalc) {
+      const servicesTotal = lineItems.services.reduce((s, sv) => s + sv.total, 0);
+      const customDevTotal = lineItems.custom_dev.reduce((s, c) => s + c.total, 0);
+      const renderCost = prodCalc.total_cost;
+      const grandTotal = renderCost + servicesTotal + customDevTotal;
+      const discountedTotal = grandTotal * (1 - discount / 100);
+      return { totalArr: renderCost, totalOnetime: servicesTotal + customDevTotal, totalYear1: discountedTotal };
+    }
+    return calculateTotals(lineItems, discount);
+  }, [lineItems, discount, quoteType, prodCalc]);
 
   const handleSave = async (asDraft = true) => {
     if (!user) return;
