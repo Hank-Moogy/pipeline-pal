@@ -422,6 +422,178 @@ mcpServer.tool({
   },
 });
 
+// Shared helper: resolve deal by ID or company name
+async function resolveDeal(sb: ReturnType<typeof getSupabase>, { deal_id, company_name }: { deal_id?: string; company_name?: string }) {
+  if (deal_id) {
+    const { data, error } = await sb.from("deals").select("*").eq("id", deal_id).single();
+    if (error) return { deal: null, error: error.message };
+    return { deal: data, error: null };
+  }
+  if (company_name) {
+    const { data, error } = await sb.from("deals").select("*").ilike("company", `%${company_name}%`).limit(1).single();
+    if (error) return { deal: null, error: error.message };
+    return { deal: data, error: null };
+  }
+  return { deal: null, error: "Please provide either deal_id or company_name." };
+}
+
+// Tool 6: Update Deal Status
+mcpServer.tool({
+  name: "update_deal_status",
+  description: "Update a deal's status (e.g. move to Negotiation, Closed Won, Closed Lost). Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+      new_status: { type: "string", description: "New status value" },
+      lost_reason: { type: "string", description: "Reason if closing as lost" },
+    },
+    required: ["new_status"],
+  },
+  handler: async ({ deal_id, company_name, new_status, lost_reason }) => {
+    const sb = getSupabase();
+    const { deal, error } = await resolveDeal(sb, { deal_id, company_name });
+    if (!deal) return { content: [{ type: "text", text: error || "Deal not found." }] };
+
+    const oldStatus = deal.status;
+    const updates: Record<string, unknown> = { status: new_status };
+    if (lost_reason) updates.lost_reason = lost_reason;
+
+    const { error: updateError } = await sb.from("deals").update(updates).eq("id", deal.id);
+    if (updateError) return { content: [{ type: "text", text: `Error: ${updateError.message}` }] };
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({ success: true, company: deal.company, old_status: oldStatus, new_status }, null, 2) }],
+    };
+  },
+});
+
+// Tool 7: Add Deal Note
+mcpServer.tool({
+  name: "add_deal_note",
+  description: "Add a note to a deal. Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+      content: { type: "string", description: "Note content" },
+      author: { type: "string", description: "Author name (optional)" },
+    },
+    required: ["content"],
+  },
+  handler: async ({ deal_id, company_name, content, author }) => {
+    const sb = getSupabase();
+    const { deal, error } = await resolveDeal(sb, { deal_id, company_name });
+    if (!deal) return { content: [{ type: "text", text: error || "Deal not found." }] };
+
+    const { error: insertError } = await sb.from("deal_notes").insert({
+      deal_id: deal.id,
+      content,
+      author: author || "MCP",
+    });
+    if (insertError) return { content: [{ type: "text", text: `Error: ${insertError.message}` }] };
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({ success: true, company: deal.company, note_preview: content.substring(0, 100) }, null, 2) }],
+    };
+  },
+});
+
+// Tool 8: Add Interaction
+mcpServer.tool({
+  name: "add_interaction",
+  description: "Log an interaction (email, call, meeting) on a deal. Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+      interaction_type: { type: "string", description: "Type: email, call, meeting, or other" },
+      subject: { type: "string", description: "Subject line" },
+      body: { type: "string", description: "Body / details (optional)" },
+      contact_email: { type: "string", description: "Contact email (optional)" },
+      occurred_at: { type: "string", description: "ISO date when it happened (default: now)" },
+      user_id: { type: "string", description: "User UUID to attribute (optional, fetches first profile if omitted)" },
+    },
+    required: ["interaction_type", "subject"],
+  },
+  handler: async ({ deal_id, company_name, interaction_type, subject, body, contact_email, occurred_at, user_id }) => {
+    const sb = getSupabase();
+    const { deal, error } = await resolveDeal(sb, { deal_id, company_name });
+    if (!deal) return { content: [{ type: "text", text: error || "Deal not found." }] };
+
+    let resolvedUserId = user_id;
+    if (!resolvedUserId) {
+      const { data: profile } = await sb.from("profiles").select("user_id").limit(1).single();
+      resolvedUserId = profile?.user_id;
+    }
+    if (!resolvedUserId) return { content: [{ type: "text", text: "Could not resolve a user_id. Please provide one." }] };
+
+    const { error: insertError } = await sb.from("deal_interactions").insert({
+      deal_id: deal.id,
+      user_id: resolvedUserId,
+      interaction_type,
+      subject,
+      body: body || null,
+      contact_email: contact_email || null,
+      occurred_at: occurred_at || new Date().toISOString(),
+      source: "mcp",
+    });
+    if (insertError) return { content: [{ type: "text", text: `Error: ${insertError.message}` }] };
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({ success: true, company: deal.company, interaction_type, subject }, null, 2) }],
+    };
+  },
+});
+
+// Tool 9: Get Deal Quotes
+mcpServer.tool({
+  name: "get_deal_quotes",
+  description: "Get all quotes attached to a deal. Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+    },
+  },
+  handler: async ({ deal_id, company_name }) => {
+    const sb = getSupabase();
+    const { deal, error } = await resolveDeal(sb, { deal_id, company_name });
+    if (!deal) return { content: [{ type: "text", text: error || "Deal not found." }] };
+
+    const { data: quotes, error: qError } = await sb
+      .from("quotes")
+      .select("id, quote_number, quote_name, quote_type, status, total_arr, total_onetime, total_year1, valid_until, line_items, created_at")
+      .eq("deal_id", deal.id)
+      .order("created_at", { ascending: false });
+
+    if (qError) return { content: [{ type: "text", text: `Error: ${qError.message}` }] };
+
+    const result = {
+      company: deal.company,
+      quote_count: (quotes || []).length,
+      quotes: (quotes || []).map((q) => ({
+        quote_number: q.quote_number,
+        name: q.quote_name,
+        type: q.quote_type,
+        status: q.status,
+        total_arr_eur: q.total_arr,
+        total_onetime_eur: q.total_onetime,
+        total_year1_eur: q.total_year1,
+        valid_until: q.valid_until,
+        created_at: q.created_at,
+        line_items_count: Array.isArray(q.line_items) ? q.line_items.length : 0,
+      })),
+    };
+
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  },
+});
+
 // MCP transport
 const transport = new StreamableHttpTransport();
 
