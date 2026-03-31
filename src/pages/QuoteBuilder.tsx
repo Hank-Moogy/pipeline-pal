@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { DEFAULT_PRICING } from '@/lib/quote-defaults';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
