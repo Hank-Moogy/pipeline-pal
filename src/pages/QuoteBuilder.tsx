@@ -100,7 +100,7 @@ export default function QuoteBuilder() {
         li.credits?.forEach(c => {
           const tierKey = c.tier.toLowerCase();
           if (tierKey.includes('custom')) {
-            const basePrice = (c.credits_per_pack / 10000) * 10;
+            const basePrice = (c.credits_per_pack / (pricing.base_credit_unit || 10000)) * (pricing.base_credit_price || 10);
             const appliedDiscount = basePrice > 0 ? Math.round((1 - c.unit_price / basePrice) * 100) : 20;
             bc['custom'] = { credits: c.credits_per_pack, discount: appliedDiscount };
           } else {
