@@ -273,8 +273,7 @@ mcpServer.tool("get_deal_details", {
 });
 
 // Tool 4: Suggest Next Actions
-mcpServer.tool({
-  name: "suggest_next_actions",
+mcpServer.tool("suggest_next_actions", {
   description:
     "Get a prioritized list of deals needing follow-up, ranked by urgency (staleness × deal value). Returns reasoning for each.",
   inputSchema: {
