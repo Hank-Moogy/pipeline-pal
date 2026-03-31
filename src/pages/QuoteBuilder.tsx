@@ -176,13 +176,13 @@ export default function QuoteBuilder() {
           quantity: 1,
           unit_price: (() => {
             const bc = bulkCredits['custom'];
-            const basePrice = (bc.credits / 10000) * 10;
+            const basePrice = (bc.credits / (pricing.base_credit_unit || 10000)) * (pricing.base_credit_price || 10);
             return basePrice * (1 - bc.discount / 100);
           })(),
           credits_per_pack: bulkCredits['custom'].credits,
           total_price: (() => {
             const bc = bulkCredits['custom'];
-            const basePrice = (bc.credits / 10000) * 10;
+            const basePrice = (bc.credits / (pricing.base_credit_unit || 10000)) * (pricing.base_credit_price || 10);
             return basePrice * (1 - bc.discount / 100);
           })(),
           total_credits: bulkCredits['custom'].credits,
