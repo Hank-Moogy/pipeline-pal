@@ -14,7 +14,7 @@ import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuoteSettings, useCreateQuote, useQuote, useUpdateQuote } from '@/hooks/useQuotes';
 import {
-  type PricingConfig, type QuoteLineItems,
+  type PricingConfig, type QuoteLineItems, type ProductionLineItems,
   emptyLineItems, calculateTotals, generateQuoteNumber, formatEur,
 } from '@/lib/quote-defaults';
 import { toast } from 'sonner';
