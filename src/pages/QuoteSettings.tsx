@@ -154,6 +154,24 @@ export default function QuoteSettings() {
               ))}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Production Calculator</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <PriceInput label="Credits per Second" value={pricing.production?.credits_per_second ?? 169} onChange={v => update(['production', 'credits_per_second'], v)} />
+              <PriceInput label="Buffer %" value={pricing.production?.buffer_percent ?? 20} onChange={v => update(['production', 'buffer_percent'], v)} suffix="%" />
+              <PriceInput label="Image Gen Credits (per gen)" value={pricing.production?.image_gen_credits ?? 500} onChange={v => update(['production', 'image_gen_credits'], v)} />
+              <Separator className="my-2" />
+              <p className="text-xs font-medium text-muted-foreground">Difficulty Settings</p>
+              {Object.entries(pricing.production?.difficulty ?? {}).map(([key, d]) => (
+                <div key={key}>
+                  <p className="text-xs font-medium text-muted-foreground mt-2 mb-1">{d.label}</p>
+                  <PriceInput label="Multiplier (×100)" value={Math.round(d.multiplier * 100)} onChange={v => update(['production', 'difficulty', key, 'multiplier'], v / 100)} />
+                  <PriceInput label="Iteration Rate (×100)" value={Math.round(d.iteration_rate * 100)} onChange={v => update(['production', 'difficulty', key, 'iteration_rate'], v / 100)} suffix="%" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AppLayout>
