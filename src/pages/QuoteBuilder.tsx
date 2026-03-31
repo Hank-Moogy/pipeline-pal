@@ -435,7 +435,7 @@ export default function QuoteBuilder() {
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(pricing.production.difficulty).map(([key, d]) => (
-                            <SelectItem key={key} value={key}>{d.label} ({d.multiplier}× / +{Math.round(d.iteration_rate * 100)}% iterations)</SelectItem>
+                            <SelectItem key={key} value={key}>{d.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
