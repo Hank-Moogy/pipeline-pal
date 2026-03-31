@@ -433,8 +433,7 @@ async function resolveDeal(sb: ReturnType<typeof getSupabase>, { deal_id, compan
 }
 
 // Tool 6: Update Deal Status
-mcpServer.tool({
-  name: "update_deal_status",
+mcpServer.tool("update_deal_status", {
   description: "Update a deal's status (e.g. move to Negotiation, Closed Won, Closed Lost). Provide deal_id or company_name.",
   inputSchema: {
     type: "object",
