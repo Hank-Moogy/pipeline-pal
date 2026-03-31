@@ -1,48 +1,50 @@
 
 
-## Extend MCP Server with Write Tools & Quote Access
+## Fix MCP Server — Correct mcp-lite API Signature
 
-### Current State
-The MCP server (`supabase/functions/mcp-server/index.ts`) has 5 read-only tools covering pipeline summary, stale deals, deal details, next actions, and search. It uses bearer token auth via `MCP_AUTH_TOKEN`.
+### Root Cause
+The `mcp-lite` library's `.tool()` method expects:
+```typescript
+mcpServer.tool("tool_name", { description, inputSchema, handler })
+```
+But the current code passes everything in a single object:
+```typescript
+mcpServer.tool({ name, description, inputSchema, handler })  // WRONG
+```
+This causes `inputSchema` to be undefined inside the library, crashing the function on boot.
 
-### New Tools to Add
+### Fix
+**Single file:** `supabase/functions/mcp-server/index.ts`
 
-**Tool 6: `update_deal_status`**
-- Input: `deal_id` (or `company_name`), `new_status`, optional `lost_reason`
-- Resolves deal by ID or company name, updates status (and `lost_reason` if closing as lost)
-- Returns confirmation with old → new status
+Change all 9 `mcpServer.tool()` calls from the single-object pattern to the positional pattern:
 
-**Tool 7: `add_deal_note`**
-- Input: `deal_id` (or `company_name`), `content`, optional `author`
-- Inserts a new row into `deal_notes`
-- Returns confirmation
+```typescript
+// Before (broken)
+mcpServer.tool({
+  name: "get_pipeline_summary",
+  description: "...",
+  inputSchema: { ... },
+  handler: async () => { ... },
+});
 
-**Tool 8: `add_interaction`**
-- Input: `deal_id` (or `company_name`), `interaction_type` (email/call/meeting/other), `subject`, optional `body`, optional `contact_email`, optional `occurred_at`
-- Inserts into `deal_interactions` (uses service role, sets a system user_id)
-- Returns confirmation
+// After (correct)
+mcpServer.tool("get_pipeline_summary", {
+  description: "...",
+  inputSchema: { ... },
+  handler: async () => { ... },
+});
+```
 
-**Tool 9: `get_deal_quotes`**
-- Input: `deal_id` (or `company_name`)
-- Queries `quotes` table filtering by `deal_id`
-- Returns quote number, name, type, status, totals, valid_until, line items summary
+Apply this same change to all 9 tools:
+1. `get_pipeline_summary`
+2. `get_stale_deals`
+3. `get_deal_details`
+4. `suggest_next_actions`
+5. `search_deals`
+6. `update_deal_status`
+7. `add_deal_note`
+8. `add_interaction`
+9. `get_deal_quotes`
 
-### Implementation Details
-
-**Single file change:** `supabase/functions/mcp-server/index.ts`
-
-- Add a shared `resolveDeal(sb, { deal_id, company_name })` helper to avoid duplicating the lookup logic across tools
-- Write tools use the service role key (already configured) so RLS isn't a blocker
-- For `add_interaction`, we need a `user_id` — we'll use a "system" approach: query the first user from `profiles` or accept an optional `user_id` parameter
-- No database changes needed — all tables and columns already exist
-
-### Security Note
-The MCP server already validates `MCP_AUTH_TOKEN` on every request, so write access is gated behind that shared secret. Only team members with the token in their Claude Desktop config can make changes.
-
-### How Your Team Uses It
-Your team connects Claude Desktop to this MCP server (same as today). They can now say things like:
-- "Move the Acme deal to Negotiation"
-- "Add a note to the Nike deal: they want a demo next Tuesday"
-- "Log a call with Adidas about pricing concerns"
-- "Show me all quotes for the BMW deal"
+No logic changes needed — just move the `name` field out of the options object and into the first argument position.
 
