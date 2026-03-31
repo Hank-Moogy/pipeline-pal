@@ -594,7 +594,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 4. Support */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">4. Support & SLA</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
