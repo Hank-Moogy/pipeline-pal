@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Download, Edit, Copy, Loader2 } from 'lucide-react';
 import { useQuote, useQuoteVersions, useProfiles } from '@/hooks/useQuotes';
-import { formatEur, type QuoteLineItems } from '@/lib/quote-defaults';
+import { formatEur, type QuoteLineItems, type ProductionLineItems } from '@/lib/quote-defaults';
 import { generateQuotePdf } from '@/lib/quote-pdf';
 import { format } from 'date-fns';
 
