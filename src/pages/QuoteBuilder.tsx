@@ -361,6 +361,7 @@ export default function QuoteBuilder() {
                     <SelectContent>
                       <SelectItem value="one_off">One-off Quote</SelectItem>
                       <SelectItem value="enterprise_contract">Enterprise Contract</SelectItem>
+                      <SelectItem value="production_calculator">Production Calculator</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
