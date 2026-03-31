@@ -1,4 +1,4 @@
-import { formatEur, type QuoteLineItems, type PricingConfig } from './quote-defaults';
+import { formatEur, type QuoteLineItems, type PricingConfig, type ProductionLineItems } from './quote-defaults';
 
 const COMPANY_ADDRESS = [
   '112 avenue de Paris',
@@ -117,57 +117,95 @@ export async function generateQuotePdf(quote: {
     y += 6;
   };
 
-  // ── Hosting ──
-  addSectionTitle('1. Hosting');
-  addItem(quote.line_items.hosting?.model || 'N/A');
+  const isProduction = quote.quote_type === 'production_calculator' && quote.line_items.production;
 
-  // ── Licenses ──
-  if (quote.line_items.licenses?.length) {
-    addSectionTitle('2. Licenses');
-    quote.line_items.licenses.forEach(l => {
-      addItem(`${l.type} × ${l.quantity}`);
-    });
-  }
+  if (isProduction) {
+    const p = quote.line_items.production!;
 
-  // ── Credits ──
-  if (quote.line_items.credits?.length) {
-    addSectionTitle('3. Credits');
-    quote.line_items.credits.forEach(c => {
-      const isFree = c.total_price === 0;
-      addItem(`${c.tier} — ${c.total_credits.toLocaleString()} credits${isFree ? '  (Free)' : ''}`);
-    });
-  }
+    addSectionTitle('Production Details');
+    addItem(`Base render time: ${Math.floor(p.length_seconds / 60)}m ${p.length_seconds % 60}s`);
+    addItem(`Shots: ${p.num_shots}`);
+    addItem(`Difficulty: ${p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1)} (×${p.multiplier})`);
+    addItem(`Iteration rate: +${Math.round(p.iteration_rate * 100)}%`);
+    addItem(`Effective render time: ${Math.floor(p.effective_render_seconds / 60)}m ${p.effective_render_seconds % 60}s`);
 
-  // ── Support ──
-  if (quote.line_items.support?.length) {
-    addSectionTitle('4. Support & SLA');
-    quote.line_items.support.forEach(s => {
-      addItem(s.tier);
-    });
-  }
+    addSectionTitle('Credits Breakdown');
+    addItem(`Rendering credits: ${p.rendering_credits.toLocaleString()}`);
+    addItem(`Image gen credits: ${p.image_gen_credits.toLocaleString()}`);
+    addItem(`Buffer (+${p.buffer_percent}%): ${(p.total_credits - p.subtotal_credits).toLocaleString()}`);
+    addItem(`Total credits: ${p.total_credits.toLocaleString()}`);
+    if (p.credit_discount > 0) {
+      addItem(`Credit discount: ${p.credit_discount}%`);
+    }
 
-  // ── Services ──
-  if (quote.line_items.services?.length) {
-    addSectionTitle('5. Professional Services');
-    quote.line_items.services.forEach(s => {
-      addItem(`${s.name} × ${s.quantity}`);
-      if (s.name.toLowerCase().includes('discovery') || s.name.toLowerCase().includes('poc')) {
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(100, 100, 100);
-        doc.text('Includes 1 onboarding session, 2 follow-up meetings, and Slack support', 18, y);
-        y += 5;
-        doc.setTextColor(0, 0, 0);
-      }
-    });
-  }
+    // Services
+    if (quote.line_items.services?.length) {
+      addSectionTitle('Professional Services');
+      quote.line_items.services.forEach(s => {
+        addItem(`${s.name} × ${s.quantity}`);
+      });
+    }
 
-  // ── Custom Dev ──
-  if (quote.line_items.custom_dev?.length) {
-    addSectionTitle('6. Custom Development');
-    quote.line_items.custom_dev.forEach(c => {
-      addItem(`${c.type} × ${c.quantity}`);
-    });
+    // Custom Dev
+    if (quote.line_items.custom_dev?.length) {
+      addSectionTitle('Custom Development');
+      quote.line_items.custom_dev.forEach(c => {
+        addItem(`${c.type} × ${c.quantity}`);
+      });
+    }
+  } else {
+    // ── Hosting ──
+    addSectionTitle('1. Hosting');
+    addItem(quote.line_items.hosting?.model || 'N/A');
+
+    // ── Licenses ──
+    if (quote.line_items.licenses?.length) {
+      addSectionTitle('2. Licenses');
+      quote.line_items.licenses.forEach(l => {
+        addItem(`${l.type} × ${l.quantity}`);
+      });
+    }
+
+    // ── Credits ──
+    if (quote.line_items.credits?.length) {
+      addSectionTitle('3. Credits');
+      quote.line_items.credits.forEach(c => {
+        const isFree = c.total_price === 0;
+        addItem(`${c.tier} — ${c.total_credits.toLocaleString()} credits${isFree ? '  (Free)' : ''}`);
+      });
+    }
+
+    // ── Support ──
+    if (quote.line_items.support?.length) {
+      addSectionTitle('4. Support & SLA');
+      quote.line_items.support.forEach(s => {
+        addItem(s.tier);
+      });
+    }
+
+    // ── Services ──
+    if (quote.line_items.services?.length) {
+      addSectionTitle('5. Professional Services');
+      quote.line_items.services.forEach(s => {
+        addItem(`${s.name} × ${s.quantity}`);
+        if (s.name.toLowerCase().includes('discovery') || s.name.toLowerCase().includes('poc')) {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'italic');
+          doc.setTextColor(100, 100, 100);
+          doc.text('Includes 1 onboarding session, 2 follow-up meetings, and Slack support', 18, y);
+          y += 5;
+          doc.setTextColor(0, 0, 0);
+        }
+      });
+    }
+
+    // ── Custom Dev ──
+    if (quote.line_items.custom_dev?.length) {
+      addSectionTitle('6. Custom Development');
+      quote.line_items.custom_dev.forEach(c => {
+        addItem(`${c.type} × ${c.quantity}`);
+      });
+    }
   }
 
   // ── Summary (no ARR) ──
@@ -188,8 +226,7 @@ export async function generateQuotePdf(quote: {
   doc.setDrawColor(0);
   doc.line(14, y - 2, 196, y - 2);
 
-  const isOneOff = quote.quote_type === 'one_off';
-  const totalLabel = isOneOff ? 'Total' : 'Year 1 Total';
+  const totalLabel = isProduction ? 'Total' : (quote.quote_type === 'one_off' ? 'Total' : 'Year 1 Total');
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Download, Edit, Copy, Loader2 } from 'lucide-react';
 import { useQuote, useQuoteVersions, useProfiles } from '@/hooks/useQuotes';
-import { formatEur, type QuoteLineItems } from '@/lib/quote-defaults';
+import { formatEur, type QuoteLineItems, type ProductionLineItems } from '@/lib/quote-defaults';
 import { generateQuotePdf } from '@/lib/quote-pdf';
 import { format } from 'date-fns';
 
@@ -102,75 +102,136 @@ export default function QuoteDetail() {
             </Card>
 
             {/* Line items sections */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">Line Items</CardTitle></CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div>
-                  <p className="font-medium mb-1">Hosting</p>
-                  <p>{li?.hosting?.model} {li?.hosting?.installation_fee ? `(+ ${formatEur(li.hosting.installation_fee)} install)` : ''}</p>
-                </div>
-
-                {li?.licenses?.length > 0 && (
+            {(quote as any).quote_type === 'production_calculator' && li?.production ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Production Breakdown</CardTitle></CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  {(quote as any).description && (
+                    <p className="text-muted-foreground whitespace-pre-wrap">{(quote as any).description}</p>
+                  )}
                   <div>
-                    <p className="font-medium mb-1">Licenses</p>
-                    {li.licenses.map((l, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{l.type} × {l.quantity}</span>
-                        <span>{formatEur(l.total)}</span>
-                      </div>
-                    ))}
+                    <p className="font-medium mb-1">Production Details</p>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Base render time</span><span>{Math.floor(li.production.length_seconds / 60)}m {li.production.length_seconds % 60}s</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Shots</span><span>{li.production.num_shots}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Difficulty</span><span className="capitalize">{li.production.difficulty} (×{li.production.multiplier})</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Iteration rate</span><span>+{Math.round(li.production.iteration_rate * 100)}%</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Effective render time</span><span>{Math.floor(li.production.effective_render_seconds / 60)}m {li.production.effective_render_seconds % 60}s</span></div>
                   </div>
-                )}
-
-                {li?.credits?.length > 0 && (
+                  <Separator />
                   <div>
                     <p className="font-medium mb-1">Credits</p>
-                    {li.credits.map((c, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{c.tier} × {c.quantity} ({c.total_credits.toLocaleString()} credits)</span>
-                        <span>{formatEur(c.total_price)}</span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Rendering credits</span><span>{li.production.rendering_credits.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Image gen credits</span><span>{li.production.image_gen_credits.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Buffer (+{li.production.buffer_percent}%)</span><span>{(li.production.total_credits - li.production.subtotal_credits).toLocaleString()}</span></div>
+                    <div className="flex justify-between font-semibold"><span>Total credits</span><span>{li.production.total_credits.toLocaleString()}</span></div>
+                    {li.production.credit_discount > 0 && (
+                      <div className="flex justify-between"><span className="text-muted-foreground">Credit discount</span><span>{li.production.credit_discount}%</span></div>
+                    )}
+                    <div className="flex justify-between font-bold text-primary"><span>Rendering Cost</span><span>{formatEur(li.production.total_cost)}</span></div>
                   </div>
-                )}
 
-                {li?.support?.length > 0 && (
-                  <div>
-                    <p className="font-medium mb-1">Support</p>
-                    {li.support.map((s, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{s.tier}</span>
-                        <span>{formatEur(s.annual)}/yr</span>
+                  {li?.services?.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <p className="font-medium mb-1">Professional Services</p>
+                        {li.services.map((s, i) => (
+                          <div key={i} className="flex justify-between">
+                            <span>{s.name} × {s.quantity}</span>
+                            <span>{formatEur(s.total)}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </>
+                  )}
 
-                {li?.services?.length > 0 && (
-                  <div>
-                    <p className="font-medium mb-1">Professional Services</p>
-                    {li.services.map((s, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{s.name} × {s.quantity}</span>
-                        <span>{formatEur(s.total)}</span>
+                  {li?.custom_dev?.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <p className="font-medium mb-1">Custom Development</p>
+                        {li.custom_dev.map((c, i) => (
+                          <div key={i} className="flex justify-between">
+                            <span>{c.type} × {c.quantity}</span>
+                            <span>{formatEur(c.total)}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Line Items</CardTitle></CardHeader>
+                <CardContent className="space-y-4 text-sm">
+                  <div>
+                    <p className="font-medium mb-1">Hosting</p>
+                    <p>{li?.hosting?.model} {li?.hosting?.installation_fee ? `(+ ${formatEur(li.hosting.installation_fee)} install)` : ''}</p>
                   </div>
-                )}
 
-                {li?.custom_dev?.length > 0 && (
-                  <div>
-                    <p className="font-medium mb-1">Custom Development</p>
-                    {li.custom_dev.map((c, i) => (
-                      <div key={i} className="flex justify-between">
-                        <span>{c.type} × {c.quantity}</span>
-                        <span>{formatEur(c.total)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {li?.licenses?.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-1">Licenses</p>
+                      {li.licenses.map((l, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{l.type} × {l.quantity}</span>
+                          <span>{formatEur(l.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {li?.credits?.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-1">Credits</p>
+                      {li.credits.map((c, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{c.tier} × {c.quantity} ({c.total_credits.toLocaleString()} credits)</span>
+                          <span>{formatEur(c.total_price)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {li?.support?.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-1">Support</p>
+                      {li.support.map((s, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{s.tier}</span>
+                          <span>{formatEur(s.annual)}/yr</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {li?.services?.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-1">Professional Services</p>
+                      {li.services.map((s, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{s.name} × {s.quantity}</span>
+                          <span>{formatEur(s.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {li?.custom_dev?.length > 0 && (
+                    <div>
+                      <p className="font-medium mb-1">Custom Development</p>
+                      {li.custom_dev.map((c, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{c.type} × {c.quantity}</span>
+                          <span>{formatEur(c.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {quote.notes && (
               <Card>

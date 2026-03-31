@@ -14,7 +14,7 @@ import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuoteSettings, useCreateQuote, useQuote, useUpdateQuote } from '@/hooks/useQuotes';
 import {
-  type PricingConfig, type QuoteLineItems,
+  type PricingConfig, type QuoteLineItems, type ProductionLineItems,
   emptyLineItems, calculateTotals, generateQuoteNumber, formatEur,
 } from '@/lib/quote-defaults';
 import { toast } from 'sonner';
@@ -53,7 +53,7 @@ export default function QuoteBuilder() {
     return lastDay.toISOString().split('T')[0];
   });
   const [notes, setNotes] = useState('');
-  const [quoteType, setQuoteType] = useState<'one_off' | 'enterprise_contract'>('enterprise_contract');
+  const [quoteType, setQuoteType] = useState<'one_off' | 'enterprise_contract' | 'production_calculator'>('enterprise_contract');
   const [discount, setDiscount] = useState(0);
 
   // Line item selections
@@ -64,6 +64,14 @@ export default function QuoteBuilder() {
   const [supportSelections, setSupportSelections] = useState<Record<string, boolean>>({ standard: true });
   const [serviceQty, setServiceQty] = useState<Record<string, number>>({});
   const [customDevQty, setCustomDevQty] = useState<Record<string, number>>({});
+
+  // Production calculator state
+  const [prodLengthMin, setProdLengthMin] = useState(0);
+  const [prodLengthSec, setProdLengthSec] = useState(0);
+  const [prodShots, setProdShots] = useState(0);
+  const [prodImageGens, setProdImageGens] = useState(0);
+  const [prodDifficulty, setProdDifficulty] = useState<'simple' | 'medium' | 'complex'>('medium');
+  const [prodCreditDiscount, setProdCreditDiscount] = useState(20);
 
   // Load existing quote for editing
   useEffect(() => {
@@ -107,6 +115,17 @@ export default function QuoteBuilder() {
         const cd: Record<string, number> = {};
         li.custom_dev?.forEach(c => { cd[c.type.toLowerCase()] = c.quantity; });
         setCustomDevQty(cd);
+
+        // Load production data
+        if (li.production) {
+          const p = li.production;
+          setProdLengthMin(Math.floor(p.length_seconds / 60));
+          setProdLengthSec(p.length_seconds % 60);
+          setProdShots(p.num_shots);
+          setProdImageGens(p.num_image_gens);
+          setProdDifficulty(p.difficulty);
+          setProdCreditDiscount(p.credit_discount);
+        }
       }
     }
   }, [existingQuote]);
@@ -198,7 +217,57 @@ export default function QuoteBuilder() {
     };
   }, [pricing, hostingModel, licenseQty, creditSelections, bulkCredits, supportSelections, serviceQty, customDevQty]);
 
-  const totals = useMemo(() => calculateTotals(lineItems, discount), [lineItems, discount]);
+  // Production calculation
+  const prodCalc = useMemo((): ProductionLineItems | undefined => {
+    if (quoteType !== 'production_calculator' || !pricing?.production) return undefined;
+    const cfg = pricing.production;
+    const diff = cfg.difficulty[prodDifficulty];
+    const baseSeconds = prodLengthMin * 60 + prodLengthSec;
+    const effectiveSeconds = Math.round(baseSeconds * (1 + diff.iteration_rate));
+    const renderingCredits = Math.round(effectiveSeconds * cfg.credits_per_second * diff.multiplier);
+    const imageGenCredits = prodImageGens * cfg.image_gen_credits;
+    const subtotal = renderingCredits + imageGenCredits;
+    const totalCredits = Math.round(subtotal * (1 + cfg.buffer_percent / 100));
+    const basePrice = (totalCredits / 10000) * 10;
+    const totalCost = basePrice * (1 - prodCreditDiscount / 100);
+
+    return {
+      length_seconds: baseSeconds,
+      num_shots: prodShots,
+      num_image_gens: prodImageGens,
+      difficulty: prodDifficulty,
+      iteration_rate: diff.iteration_rate,
+      multiplier: diff.multiplier,
+      effective_render_seconds: effectiveSeconds,
+      rendering_credits: renderingCredits,
+      image_gen_credits: imageGenCredits,
+      subtotal_credits: subtotal,
+      buffer_percent: cfg.buffer_percent,
+      total_credits: totalCredits,
+      credit_discount: prodCreditDiscount,
+      total_cost: totalCost,
+    };
+  }, [quoteType, pricing, prodLengthMin, prodLengthSec, prodShots, prodImageGens, prodDifficulty, prodCreditDiscount]);
+
+  // Merge production into line items for save
+  const finalLineItems = useMemo((): QuoteLineItems => {
+    if (prodCalc) {
+      return { ...lineItems, production: prodCalc };
+    }
+    return lineItems;
+  }, [lineItems, prodCalc]);
+
+  const totals = useMemo(() => {
+    if (quoteType === 'production_calculator' && prodCalc) {
+      const servicesTotal = lineItems.services.reduce((s, sv) => s + sv.total, 0);
+      const customDevTotal = lineItems.custom_dev.reduce((s, c) => s + c.total, 0);
+      const renderCost = prodCalc.total_cost;
+      const grandTotal = renderCost + servicesTotal + customDevTotal;
+      const discountedTotal = grandTotal * (1 - discount / 100);
+      return { totalArr: renderCost, totalOnetime: servicesTotal + customDevTotal, totalYear1: discountedTotal };
+    }
+    return calculateTotals(lineItems, discount);
+  }, [lineItems, discount, quoteType, prodCalc]);
 
   const handleSave = async (asDraft = true) => {
     if (!user) return;
@@ -210,7 +279,7 @@ export default function QuoteBuilder() {
       contact_email: contactEmail || null,
       quote_number: quoteNumber,
       hosting_model: hostingModel,
-      line_items: lineItems as any,
+      line_items: finalLineItems as any,
       total_arr: totals.totalArr,
       total_onetime: totals.totalOnetime,
       total_year1: totals.totalYear1,
@@ -292,6 +361,7 @@ export default function QuoteBuilder() {
                     <SelectContent>
                       <SelectItem value="one_off">One-off Quote</SelectItem>
                       <SelectItem value="enterprise_contract">Enterprise Contract</SelectItem>
+                      <SelectItem value="production_calculator">Production Calculator</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -329,8 +399,83 @@ export default function QuoteBuilder() {
               </CardContent>
             </Card>
 
+            {/* Production Calculator */}
+            {quoteType === 'production_calculator' && pricing?.production && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Production Calculator</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label>Length (minutes)</Label>
+                      <Input type="number" min={0} value={prodLengthMin} onChange={e => setProdLengthMin(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Extra seconds</Label>
+                      <Input type="number" min={0} max={59} value={prodLengthSec} onChange={e => setProdLengthSec(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Number of Shots</Label>
+                      <Input type="number" min={0} value={prodShots} onChange={e => setProdShots(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label>Image Generations</Label>
+                      <Input type="number" min={0} value={prodImageGens} onChange={e => setProdImageGens(Number(e.target.value) || 0)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label>Shot Difficulty</Label>
+                      <Select value={prodDifficulty} onValueChange={v => setProdDifficulty(v as any)}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(pricing.production.difficulty).map(([key, d]) => (
+                            <SelectItem key={key} value={key}>{d.label} ({d.multiplier}× / +{Math.round(d.iteration_rate * 100)}% iterations)</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Credit Discount</Label>
+                      <Select value={String(prodCreditDiscount)} onValueChange={v => setProdCreditDiscount(Number(v))}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[0, 20, 25, 30, 35, 100].map(d => (
+                            <SelectItem key={d} value={String(d)}>{d}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {prodCalc && (
+                    <div className="rounded-md bg-muted/50 p-4 space-y-2 text-sm">
+                      <p className="font-medium text-base">Calculation Breakdown</p>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Base render time</span><span>{Math.floor(prodCalc.length_seconds / 60)}m {prodCalc.length_seconds % 60}s ({prodCalc.length_seconds}s)</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Iteration rate (+{Math.round(prodCalc.iteration_rate * 100)}%)</span><span>{Math.floor(prodCalc.effective_render_seconds / 60)}m {prodCalc.effective_render_seconds % 60}s effective</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Difficulty multiplier</span><span>×{prodCalc.multiplier}</span></div>
+                      <Separator />
+                      <div className="flex justify-between"><span className="text-muted-foreground">Rendering credits</span><span>{prodCalc.rendering_credits.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Image gen credits</span><span>{prodCalc.image_gen_credits.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Buffer (+{prodCalc.buffer_percent}%)</span><span>{(prodCalc.total_credits - prodCalc.subtotal_credits).toLocaleString()}</span></div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold"><span>Total credits</span><span>{prodCalc.total_credits.toLocaleString()}</span></div>
+                      {prodCalc.credit_discount > 0 && (
+                        <div className="flex justify-between text-muted-foreground"><span>Credit discount</span><span>{prodCalc.credit_discount}%</span></div>
+                      )}
+                      <div className="flex justify-between font-bold text-primary"><span>Rendering Cost</span><span>{formatEur(prodCalc.total_cost)}</span></div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* 1. Hosting */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">1. Hosting Scenario</CardTitle></CardHeader>
                 <CardContent>
@@ -355,7 +500,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 2. Licenses */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">2. License Selection</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
@@ -378,7 +523,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 3. Credits */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">3. Credits Bundle</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
@@ -449,7 +594,7 @@ export default function QuoteBuilder() {
             )}
 
             {/* 4. Support */}
-            {pricing && (
+            {quoteType !== 'production_calculator' && pricing && (
               <Card>
                 <CardHeader><CardTitle className="text-base">4. Support & SLA</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
@@ -535,46 +680,72 @@ export default function QuoteBuilder() {
             <Card>
               <CardHeader><CardTitle className="text-base">Quote Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">License Fees</span><span>{formatEur(lineItems.licenses.reduce((s, l) => s + l.total, 0))}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Hosting</span><span>{formatEur(lineItems.hosting.annual_fee)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span>{formatEur(lineItems.credits.reduce((s, c) => s + c.total_price, 0))}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Support</span><span>{formatEur(lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold text-primary"><span>{quoteType === 'one_off' ? 'Subtotal Recurring' : 'Recurring Total'}</span><span>{formatEur(lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Installation</span><span>{formatEur(lineItems.hosting.installation_fee)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Services</span><span>{formatEur(lineItems.services.reduce((s, sv) => s + sv.total, 0))}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Custom Dev</span><span>{formatEur(lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold"><span>Total One-Time</span><span>{formatEur(lineItems.hosting.installation_fee + lineItems.services.reduce((s, sv) => s + sv.total, 0) + lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs">Discount %</span>
-                    <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-destructive">
-                      <span>Discount ({discount}%)</span>
-                      <span>-{formatEur((lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0) + lineItems.hosting.installation_fee + lineItems.services.reduce((s, sv) => s + sv.total, 0) + lineItems.custom_dev.reduce((s, c) => s + c.total, 0)) * discount / 100)}</span>
+                {quoteType === 'production_calculator' && prodCalc ? (
+                  <>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Rendering Cost</span><span>{formatEur(prodCalc.total_cost)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Total Credits</span><span>{prodCalc.total_credits.toLocaleString()}</span></div>
+                      <Separator />
+                      <div className="flex justify-between"><span className="text-muted-foreground">Services</span><span>{formatEur(lineItems.services.reduce((s, sv) => s + sv.total, 0))}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Custom Dev</span><span>{formatEur(lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
                     </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                <div className="flex justify-between text-lg font-bold">
-                  <span>{quoteType === 'one_off' ? 'Total' : 'Year 1 Total'}</span>
-                  <span className="text-primary">{formatEur(totals.totalYear1)}</span>
-                </div>
+                    <Separator />
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Discount %</span>
+                        <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-destructive">
+                          <span>Discount ({discount}%)</span>
+                          <span>-{formatEur((prodCalc.total_cost + lineItems.services.reduce((s, sv) => s + sv.total, 0) + lineItems.custom_dev.reduce((s, c) => s + c.total, 0)) * discount / 100)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span className="text-primary">{formatEur(totals.totalYear1)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">License Fees</span><span>{formatEur(lineItems.licenses.reduce((s, l) => s + l.total, 0))}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Hosting</span><span>{formatEur(lineItems.hosting.annual_fee)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span>{formatEur(lineItems.credits.reduce((s, c) => s + c.total_price, 0))}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Support</span><span>{formatEur(lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold text-primary"><span>{quoteType === 'one_off' ? 'Subtotal Recurring' : 'Recurring Total'}</span><span>{formatEur(lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0))}</span></div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Installation</span><span>{formatEur(lineItems.hosting.installation_fee)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Services</span><span>{formatEur(lineItems.services.reduce((s, sv) => s + sv.total, 0))}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Custom Dev</span><span>{formatEur(lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold"><span>Total One-Time</span><span>{formatEur(lineItems.hosting.installation_fee + lineItems.services.reduce((s, sv) => s + sv.total, 0) + lineItems.custom_dev.reduce((s, c) => s + c.total, 0))}</span></div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Discount %</span>
+                        <Input type="number" min={0} max={100} value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)} className="w-20 h-7 text-sm text-right" />
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-destructive">
+                          <span>Discount ({discount}%)</span>
+                          <span>-{formatEur((lineItems.licenses.reduce((s, l) => s + l.total, 0) + lineItems.hosting.annual_fee + lineItems.credits.reduce((s, c) => s + c.total_price, 0) + lineItems.support.reduce((s, s2) => s + s2.annual, 0) + lineItems.hosting.installation_fee + lineItems.services.reduce((s, sv) => s + sv.total, 0) + lineItems.custom_dev.reduce((s, c) => s + c.total, 0)) * discount / 100)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>{quoteType === 'one_off' ? 'Total' : 'Year 1 Total'}</span>
+                      <span className="text-primary">{formatEur(totals.totalYear1)}</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

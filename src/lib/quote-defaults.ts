@@ -34,6 +34,16 @@ export interface PricingConfig {
     medium: { label: string; price: number; description: string };
     high: { label: string; price: number; description: string };
   };
+  production: {
+    credits_per_second: number;
+    buffer_percent: number;
+    image_gen_credits: number;
+    difficulty: {
+      simple: { label: string; multiplier: number; iteration_rate: number };
+      medium: { label: string; multiplier: number; iteration_rate: number };
+      complex: { label: string; multiplier: number; iteration_rate: number };
+    };
+  };
 }
 
 export const DEFAULT_PRICING: PricingConfig = {
@@ -72,6 +82,16 @@ export const DEFAULT_PRICING: PricingConfig = {
     medium: { label: 'Medium Effort', price: 5000, description: 'Feature enhancements, integrations' },
     high: { label: 'High Effort', price: 15000, description: 'Major features, complex integrations' },
   },
+  production: {
+    credits_per_second: 169,
+    buffer_percent: 20,
+    image_gen_credits: 500,
+    difficulty: {
+      simple: { label: 'Simple', multiplier: 1, iteration_rate: 0.70 },
+      medium: { label: 'Medium', multiplier: 1.5, iteration_rate: 0.80 },
+      complex: { label: 'Complex', multiplier: 2, iteration_rate: 0.90 },
+    },
+  },
 };
 
 export interface QuoteLineItems {
@@ -81,6 +101,24 @@ export interface QuoteLineItems {
   support: Array<{ tier: string; annual: number }>;
   services: Array<{ name: string; quantity: number; unit_price: number; unit: string; total: number }>;
   custom_dev: Array<{ type: string; quantity: number; unit_price: number; total: number }>;
+  production?: ProductionLineItems;
+}
+
+export interface ProductionLineItems {
+  length_seconds: number;
+  num_shots: number;
+  num_image_gens: number;
+  difficulty: 'simple' | 'medium' | 'complex';
+  iteration_rate: number;
+  multiplier: number;
+  effective_render_seconds: number;
+  rendering_credits: number;
+  image_gen_credits: number;
+  subtotal_credits: number;
+  buffer_percent: number;
+  total_credits: number;
+  credit_discount: number;
+  total_cost: number;
 }
 
 export function emptyLineItems(): QuoteLineItems {
