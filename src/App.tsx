@@ -18,6 +18,7 @@ import Quotes from "./pages/Quotes";
 import QuoteBuilder from "./pages/QuoteBuilder";
 import QuoteDetail from "./pages/QuoteDetail";
 import QuoteSettings from "./pages/QuoteSettings";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/quotes/new" element={<QuoteBuilder />} />
             <Route path="/quotes/settings" element={<QuoteSettings />} />
             <Route path="/quotes/:id" element={<QuoteDetail />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
