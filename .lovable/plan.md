@@ -1,50 +1,54 @@
 
 
-## Fix MCP Server — Correct mcp-lite API Signature
+## Add Gmail Send & Draft Tools to MCP Server
 
-### Root Cause
-The `mcp-lite` library's `.tool()` method expects:
-```typescript
-mcpServer.tool("tool_name", { description, inputSchema, handler })
-```
-But the current code passes everything in a single object:
-```typescript
-mcpServer.tool({ name, description, inputSchema, handler })  // WRONG
-```
-This causes `inputSchema` to be undefined inside the library, crashing the function on boot.
+### What This Does
+Adds two new MCP tools so your team can send emails or create Gmail drafts directly from Claude, using the connected Gmail account's OAuth tokens.
 
-### Fix
-**Single file:** `supabase/functions/mcp-server/index.ts`
+### Prerequisites
+1. **Upgrade Gmail OAuth scope** — The current integration only has `gmail.readonly`. You need to add `gmail.send` in your Google Cloud Console for the OAuth client, then update the code to request both scopes.
+2. **Users must re-authenticate Gmail** — After the scope change, each user needs to reconnect Gmail to grant the new `gmail.send` permission.
 
-Change all 9 `mcpServer.tool()` calls from the single-object pattern to the positional pattern:
+### Changes
 
-```typescript
-// Before (broken)
-mcpServer.tool({
-  name: "get_pipeline_summary",
-  description: "...",
-  inputSchema: { ... },
-  handler: async () => { ... },
-});
+**1. `supabase/functions/gmail-auth/index.ts`**
+- Change scope from `gmail.readonly` to `gmail.readonly gmail.send`
 
-// After (correct)
-mcpServer.tool("get_pipeline_summary", {
-  description: "...",
-  inputSchema: { ... },
-  handler: async () => { ... },
-});
-```
+**2. `supabase/functions/mcp-server/index.ts`**
+Add two new tools and a shared Gmail helper:
 
-Apply this same change to all 9 tools:
-1. `get_pipeline_summary`
-2. `get_stale_deals`
-3. `get_deal_details`
-4. `suggest_next_actions`
-5. `search_deals`
-6. `update_deal_status`
-7. `add_deal_note`
-8. `add_interaction`
-9. `get_deal_quotes`
+**Shared helper: `getGmailAccessToken(sb, userEmail?)`**
+- Looks up `gmail_tokens` table (picks a token — either by email or first available)
+- Refreshes if expired (same pattern as `sync-gmail`)
+- Returns `{ accessToken, email }` or throws
 
-No logic changes needed — just move the `name` field out of the options object and into the first argument position.
+**Tool 10: `draft_email`**
+- Inputs: `deal_id` or `company_name`, `to` (email), `subject`, `body`, `user_email` (optional — to pick which Gmail account)
+- Creates a draft in Gmail via `POST /gmail/v1/users/me/drafts` with a base64url-encoded RFC 2822 message
+- Also logs the action as a `deal_interaction` with type `email_drafted`
+- Returns: draft ID, subject, recipient
+
+**Tool 11: `send_email`**
+- Same inputs as `draft_email`
+- Sends immediately via `POST /gmail/v1/users/me/messages/send`
+- Logs as `deal_interaction` with type `email_sent`
+- Returns: message ID, subject, recipient
+
+Both tools construct the email with proper `From`, `To`, `Subject`, and `Content-Type: text/html` headers using the authenticated Gmail address.
+
+### Security Notes
+- MCP auth token gates all access (same as existing tools)
+- Gmail tokens are retrieved server-side using service role — no credentials exposed
+- The MCP server picks the Gmail token from the database, so it sends from whoever connected Gmail
+
+### Usage from Claude
+After implementation, your team can say:
+- *"Draft a follow-up email to the Nike deal contact about next steps"*
+- *"Send a quick check-in to the Adidas deal contact"*
+
+Claude will use deal context to compose the email, then call `draft_email` or `send_email`.
+
+### Files Modified
+1. `supabase/functions/gmail-auth/index.ts` — add `gmail.send` scope
+2. `supabase/functions/mcp-server/index.ts` — add helper + 2 tools (~80 lines)
 
