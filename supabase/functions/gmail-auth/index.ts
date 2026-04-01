@@ -44,7 +44,7 @@ serve(async (req) => {
       client_id: clientId,
       redirect_uri: callbackUrl,
       response_type: "code",
-      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      scope: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
       access_type: "offline",
       prompt: "select_account consent",
       state: stateEncoded,

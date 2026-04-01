@@ -585,6 +585,196 @@ mcpServer.tool("get_deal_quotes", {
   },
 });
 
+// ── Gmail helper: get a valid access token from gmail_tokens table ──
+async function getGmailAccessToken(sb: ReturnType<typeof getSupabase>, userEmail?: string) {
+  let query = sb.from("gmail_tokens").select("*");
+  if (userEmail) {
+    query = query.eq("email", userEmail);
+  }
+  const { data: token, error } = await query.limit(1).single();
+  if (error || !token) throw new Error(userEmail ? `No Gmail token found for ${userEmail}` : "No Gmail token found. Connect Gmail first.");
+
+  // Refresh if expired
+  if (new Date(token.expires_at) <= new Date()) {
+    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+    const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+    if (!clientId || !clientSecret) throw new Error("Google OAuth credentials not configured");
+
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: token.refresh_token,
+        grant_type: "refresh_token",
+      }),
+    });
+    const refreshData = await res.json();
+    if (!refreshData.access_token) throw new Error("Failed to refresh Gmail token");
+
+    const newExpiry = new Date(Date.now() + refreshData.expires_in * 1000).toISOString();
+    await sb.from("gmail_tokens").update({
+      access_token: refreshData.access_token,
+      expires_at: newExpiry,
+      updated_at: new Date().toISOString(),
+    }).eq("id", token.id);
+
+    return { accessToken: refreshData.access_token, email: token.email! };
+  }
+
+  return { accessToken: token.access_token, email: token.email! };
+}
+
+function buildRfc2822(from: string, to: string, subject: string, bodyHtml: string) {
+  const msg = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/html; charset=UTF-8`,
+    ``,
+    bodyHtml,
+  ].join("\r\n");
+
+  // base64url encode
+  const encoded = btoa(unescape(encodeURIComponent(msg)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return encoded;
+}
+
+// Tool 10: Draft Email
+mcpServer.tool("draft_email", {
+  description: "Create a Gmail draft for a deal contact. The email will appear in the connected Gmail account's Drafts folder for review before sending. Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+      to: { type: "string", description: "Recipient email address" },
+      subject: { type: "string", description: "Email subject line" },
+      body: { type: "string", description: "Email body (HTML supported)" },
+      user_email: { type: "string", description: "Gmail account to send from (optional, uses first connected account if omitted)" },
+    },
+    required: ["to", "subject", "body"],
+  },
+  handler: async ({ deal_id, company_name, to, subject, body, user_email }) => {
+    const sb = getSupabase();
+
+    // Resolve deal (optional — for logging)
+    const { deal } = await resolveDeal(sb, { deal_id, company_name });
+
+    const { accessToken, email: fromEmail } = await getGmailAccessToken(sb, user_email);
+    const raw = buildRfc2822(fromEmail, to, subject, body);
+
+    const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/drafts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: { raw } }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { content: [{ type: "text", text: `Gmail API error: ${err}` }] };
+    }
+
+    const draft = await res.json();
+
+    // Log as interaction if deal found
+    if (deal) {
+      const { data: profile } = await sb.from("profiles").select("user_id").limit(1).single();
+      if (profile?.user_id) {
+        await sb.from("deal_interactions").insert({
+          deal_id: deal.id,
+          user_id: profile.user_id,
+          interaction_type: "email_drafted",
+          subject,
+          body: body.substring(0, 500),
+          contact_email: to,
+          occurred_at: new Date().toISOString(),
+          source: "mcp",
+        });
+      }
+    }
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({ success: true, draft_id: draft.id, from: fromEmail, to, subject, company: deal?.company || "N/A" }, null, 2) }],
+    };
+  },
+});
+
+// Tool 11: Send Email
+mcpServer.tool("send_email", {
+  description: "Send an email immediately from the connected Gmail account to a deal contact. Provide deal_id or company_name.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      deal_id: { type: "string", description: "Exact deal UUID" },
+      company_name: { type: "string", description: "Company name (partial match)" },
+      to: { type: "string", description: "Recipient email address" },
+      subject: { type: "string", description: "Email subject line" },
+      body: { type: "string", description: "Email body (HTML supported)" },
+      user_email: { type: "string", description: "Gmail account to send from (optional, uses first connected account if omitted)" },
+    },
+    required: ["to", "subject", "body"],
+  },
+  handler: async ({ deal_id, company_name, to, subject, body, user_email }) => {
+    const sb = getSupabase();
+
+    const { deal } = await resolveDeal(sb, { deal_id, company_name });
+
+    const { accessToken, email: fromEmail } = await getGmailAccessToken(sb, user_email);
+    const raw = buildRfc2822(fromEmail, to, subject, body);
+
+    const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ raw }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { content: [{ type: "text", text: `Gmail API error: ${err}` }] };
+    }
+
+    const message = await res.json();
+
+    // Log as interaction if deal found
+    if (deal) {
+      const { data: profile } = await sb.from("profiles").select("user_id").limit(1).single();
+      if (profile?.user_id) {
+        await sb.from("deal_interactions").insert({
+          deal_id: deal.id,
+          user_id: profile.user_id,
+          interaction_type: "email_sent",
+          subject,
+          body: body.substring(0, 500),
+          contact_email: to,
+          occurred_at: new Date().toISOString(),
+          source: "mcp",
+        });
+      }
+    }
+
+    // Update deal's last_interaction
+    if (deal) {
+      await sb.from("deals").update({ last_interaction: new Date().toISOString() }).eq("id", deal.id);
+    }
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({ success: true, message_id: message.id, from: fromEmail, to, subject, company: deal?.company || "N/A" }, null, 2) }],
+    };
+  },
+});
+
 // MCP transport — bind returns a fetch handler
 const transport = new StreamableHttpTransport();
 const httpHandler = transport.bind(mcpServer);
