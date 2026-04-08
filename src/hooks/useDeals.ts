@@ -123,7 +123,7 @@ export function useUpdateDeal() {
     mutationFn: async ({ dealId, updates }: { dealId: string; updates: Record<string, unknown> }) => {
       const { data, error } = await supabase
         .from('deals')
-        .update(updates)
+        .update(updates as any)
         .eq('id', dealId)
         .select()
         .single();
