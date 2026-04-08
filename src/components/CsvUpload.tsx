@@ -72,7 +72,7 @@ async function handlePeopleUpload(
   }
 
   for (const { dealId, changes } of updates) {
-    const { error } = await supabase.from('deals').update(changes).eq('id', dealId);
+    const { error } = await supabase.from('deals').update(changes as any).eq('id', dealId);
     if (error) console.error('Update deal error:', error);
   }
 
