@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Mail, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { AgentKeyManager } from "@/components/AgentKeyManager";
+import { AuditFeed } from "@/components/AuditFeed";
 
 export default function Settings() {
   const { user } = useAuth();
