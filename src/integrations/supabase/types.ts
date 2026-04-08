@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_api_keys: {
+        Row: {
+          agent_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          scopes: Json
+          user_id: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          scopes?: Json
+          user_id: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          scopes?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_conversations: {
         Row: {
           agent_type: string
@@ -98,6 +134,42 @@ export type Database = {
           settings?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_label: string | null
+          actor_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_label?: string | null
+          actor_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_label?: string | null
+          actor_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
         }
         Relationships: []
       }

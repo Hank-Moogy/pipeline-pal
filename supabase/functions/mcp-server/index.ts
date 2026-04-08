@@ -4,17 +4,52 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const app = new Hono();
 
-// Auth middleware
+// Auth middleware — supports legacy MCP_AUTH_TOKEN AND agent API keys
 app.use("*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
 
   const authHeader = c.req.header("Authorization");
-  const token = Deno.env.get("MCP_AUTH_TOKEN");
-
-  if (!token || authHeader !== `Bearer ${token}`) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return c.json({ error: "Unauthorized" }, 401);
   }
-  await next();
+
+  const bearerValue = authHeader.replace("Bearer ", "");
+  const legacyToken = Deno.env.get("MCP_AUTH_TOKEN");
+
+  // Try legacy shared token first
+  if (legacyToken && bearerValue === legacyToken) {
+    c.set("actorType" as never, "human" as never);
+    c.set("actorLabel" as never, "MCP (legacy)" as never);
+    c.set("actorId" as never, "" as never);
+    await next();
+    return;
+  }
+
+  // Try agent API key
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(bearerValue));
+  const keyHash = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const sb = getSupabase();
+  const { data: keyData } = await sb
+    .from("agent_api_keys")
+    .select("id, user_id, agent_name, scopes, is_active")
+    .eq("key_hash", keyHash)
+    .single();
+
+  if (keyData && keyData.is_active) {
+    c.set("actorType" as never, "agent" as never);
+    c.set("actorLabel" as never, keyData.agent_name as never);
+    c.set("actorId" as never, keyData.id as never);
+    // Update last_used_at
+    sb.from("agent_api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id).then(() => {});
+    await next();
+    return;
+  }
+
+  return c.json({ error: "Unauthorized" }, 401);
 });
 
 function getSupabase() {
