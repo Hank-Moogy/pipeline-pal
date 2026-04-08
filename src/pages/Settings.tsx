@@ -101,6 +101,12 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Agent API Keys */}
+        <AgentKeyManager />
+
+        {/* Activity Feed */}
+        <AuditFeed />
       </div>
     </AppLayout>
   );
