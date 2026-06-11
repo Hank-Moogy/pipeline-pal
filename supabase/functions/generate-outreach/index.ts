@@ -73,12 +73,11 @@ serve(async (req) => {
     const recipientTitle = champion?.title || lead.job_title || "";
 
     const context = `
-RECIPIENT: ${recipientName}, ${recipientTitle} at ${lead.company || "the studio"}
-STUDIO TYPE: ${lead.studio_type || "Unknown"}
+RECIPIENT: ${recipientName}, ${recipientTitle} at ${lead.company || "the company"}
 SUMMARY: ${lead.summary || "No summary available"}
 PAIN POINTS: ${(lead.pain_points || []).join(", ") || "Unknown"}
 TECH STACK: ${(lead.tech_stack || []).join(", ") || "Unknown"}
-PRODUCT HOOKS: ${(lead.product_hooks || []).join(", ") || "General AI video acceleration"}
+PRODUCT HOOKS: ${(lead.product_hooks || []).join(", ") || "General"}
 RECENT SIGNALS: ${(lead.recent_signals || []).join(", ") || "None"}
 REGION: ${lead.region || "Unknown"}
 
