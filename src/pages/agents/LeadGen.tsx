@@ -143,7 +143,7 @@ export default function LeadGen() {
           recent_signals: l.recent_signals,
           research_depth: l.research_depth,
           last_enriched_at: l.last_enriched_at,
-          studio_type: l.studio_type,
+          
           website: l.website,
           region: l.region,
           employee_count: l.employee_count,
