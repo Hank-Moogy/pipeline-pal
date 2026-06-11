@@ -9,17 +9,15 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const ENRICHMENT_SYSTEM_PROMPT = `You are a lead intelligence analyst specializing in Animation and VFX studios. 
-You will be given research data about a studio/company. Analyze it and score their fit for an AI video transformation tool.
+const ENRICHMENT_SYSTEM_PROMPT = `You are a B2B lead intelligence analyst. You will be given research data about a company. Analyze it and produce a structured fit assessment.
 
 Scoring criteria (1-10):
-- Hot (9-10): Large studio with active AI/hybrid production, dedicated tech leadership, recent funding or major project
-- Warm (6-8): Mid-size studio modernizing pipeline, some AI adoption signals, identifiable decision-makers
-- Cool (3-5): Small studio, traditional pipeline, minimal tech signals
-- Cold (1-2): Not a studio or no relevance
+- Hot (9-10): Strong fit, active buying signals, identifiable decision-makers, recent relevant activity
+- Warm (6-8): Reasonable fit, some signals, plausible decision-makers
+- Cool (3-5): Weak fit, limited signals
+- Cold (1-2): Not a relevant target
 
-Positive fit signals: AI pipeline adoption, hybrid/virtual production, Unreal Engine, Houdini, Nuke, Maya, cloud rendering, GPU farms, tight deadlines, render costs, pipeline bottlenecks
-Negative signals: pure marketing agency, software dev shop, music/podcast studio, AI video competitors (Runway, Pika, Synthesia, etc.)`;
+Stay neutral about industry — infer fit from the research data, not from any preset vertical.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -77,13 +75,13 @@ serve(async (req) => {
         const website = lead.website || "";
 
         // Phase 1: Company search
-        const companySearch = await exaSearch(EXA_API_KEY, `${companyName} animation VFX studio technology pipeline`, "company");
-        
+        const companySearch = await exaSearch(EXA_API_KEY, `${companyName} company overview`, "company");
+
         // Phase 2: People search
-        const peopleSearch = await exaSearch(EXA_API_KEY, `${companyName} CTO "Head of Technology" "VFX Supervisor" "Head of Pipeline"`, "people");
-        
+        const peopleSearch = await exaSearch(EXA_API_KEY, `${companyName} leadership team executives`, "people");
+
         // Phase 3: News search
-        const newsSearch = await exaSearch(EXA_API_KEY, `${companyName} AI adoption project award funding 2024 2025`, "news");
+        const newsSearch = await exaSearch(EXA_API_KEY, `${companyName} news 2024 2025`, "news");
 
         // Phase 4: AI analysis
         const researchContext = `
@@ -118,17 +116,17 @@ ${formatResults(newsSearch)}
                 type: "function",
                 function: {
                   name: "enrich_lead",
-                  description: "Return structured enrichment data for the studio lead",
+                  description: "Return structured enrichment data for the lead",
                   parameters: {
                     type: "object",
                     properties: {
                       summary: { type: "string", description: "2-3 sentence company summary" },
-                      studio_type: { type: "string", enum: ["Animation", "VFX", "Post-Production", "Hybrid", "Other"], description: "Primary studio type" },
+                      company_type: { type: "string", description: "Short label for the type of company (free-form)" },
                       fit_score: { type: "integer", description: "1-10 fit score" },
                       fit_reason: { type: "string", description: "Why this score" },
                       pain_points: { type: "array", items: { type: "string" }, description: "Identified pain points" },
                       tech_stack: { type: "array", items: { type: "string" }, description: "Known tools and technologies" },
-                      product_hooks: { type: "array", items: { type: "string" }, description: "Angles to pitch our AI video tool" },
+                      product_hooks: { type: "array", items: { type: "string" }, description: "Angles to pitch the product" },
                       champions: {
                         type: "array",
                         items: {
@@ -148,7 +146,7 @@ ${formatResults(newsSearch)}
                       funding_stage: { type: "string", description: "Funding stage if known" },
                       location: { type: "string", description: "City, Country" },
                     },
-                    required: ["summary", "studio_type", "fit_score", "fit_reason", "pain_points", "tech_stack", "product_hooks", "champions", "region"],
+                    required: ["summary", "company_type", "fit_score", "fit_reason", "pain_points", "tech_stack", "product_hooks", "champions", "region"],
                     additionalProperties: false,
                   },
                 },
@@ -188,7 +186,7 @@ ${formatResults(newsSearch)}
           .from("lead_candidates")
           .update({
             summary: enrichment.summary,
-            studio_type: enrichment.studio_type,
+            studio_type: enrichment.company_type,
             fit_score: enrichment.fit_score,
             fit_reason: enrichment.fit_reason,
             pain_points: enrichment.pain_points || [],

@@ -33,7 +33,7 @@ export interface LeadResult {
   recent_signals?: string[];
   research_depth?: string;
   last_enriched_at?: string;
-  studio_type?: string;
+  
   website?: string;
   region?: string;
   employee_count?: string;
@@ -128,7 +128,7 @@ function ExpandableRow({ lead, index, selected, onToggle, onApprove, onReject, o
           {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         </TableCell>
         <TableCell className="text-sm font-medium">{lead.company || "—"}</TableCell>
-        <TableCell className="text-sm text-muted-foreground">{lead.studio_type || lead.vertical || "—"}</TableCell>
+        <TableCell className="text-sm text-muted-foreground">{lead.vertical || "—"}</TableCell>
         <TableCell>
           {lead.fit_score ? <FitScoreBadge score={lead.fit_score} /> : <span className="text-xs text-muted-foreground">—</span>}
         </TableCell>

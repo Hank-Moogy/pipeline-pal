@@ -7,25 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ICP_QUERIES = [
-  "animation studio using AI rendering pipeline",
-  "VFX studio hybrid production virtual production",
-  "visual effects company AI-powered workflow automation",
-  "animation studio machine learning accelerating pipeline",
-  "VFX company real-time rendering Unreal Engine LED volume",
-  "post-production studio AI compositing neural rendering",
-  "animation studio AI upscaling denoising render farm",
-  "VFX studio cloud rendering GPU pipeline 2024 2025",
-  "animation company Series A B funding 2024 2025",
-  "VFX studio London UK Europe",
-  "animation studio Germany France Spain",
-  "visual effects company AI transformation digital pipeline",
-];
-
-const NEGATIVE_KEYWORDS = [
-  "runway", "pika", "synthesia", "heygen", "d-id", "wonder dynamics",
-  "stability ai", "luma ai", "podcast", "music studio",
-];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -59,60 +40,41 @@ serve(async (req) => {
       });
     }
 
-    // Build search queries: user query + up to 3 ICP queries that overlap
-    const queries = [query];
-    const lowerQuery = query.toLowerCase();
-    for (const icpQ of ICP_QUERIES) {
-      if (queries.length >= 4) break;
-      const words = icpQ.toLowerCase().split(/\s+/);
-      if (words.some((w) => lowerQuery.includes(w))) {
-        queries.push(icpQ);
-      }
-    }
-
-    // Search Exa for companies
+    // Search Exa with the user's query only
     const allResults: any[] = [];
-    for (const q of queries) {
-      try {
-        const exaRes = await fetch("https://api.exa.ai/search", {
-          method: "POST",
-          headers: {
-            "x-api-key": EXA_API_KEY,
-            "Content-Type": "application/json",
+    try {
+      const exaRes = await fetch("https://api.exa.ai/search", {
+        method: "POST",
+        headers: {
+          "x-api-key": EXA_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
+          type: "auto",
+          category: "company",
+          numResults: 20,
+          contents: {
+            highlights: { maxCharacters: 2000 },
           },
-          body: JSON.stringify({
-            query: q,
-            type: "auto",
-            category: "company",
-            numResults: 10,
-            contents: {
-              highlights: { maxCharacters: 2000 },
-            },
-          }),
-        });
+        }),
+      });
 
-        if (exaRes.ok) {
-          const data = await exaRes.json();
-          if (data.results) allResults.push(...data.results);
-        }
-      } catch (e) {
-        console.error(`Exa search failed for query: ${q}`, e);
+      if (exaRes.ok) {
+        const data = await exaRes.json();
+        if (data.results) allResults.push(...data.results);
       }
+    } catch (e) {
+      console.error(`Exa search failed for query: ${query}`, e);
     }
 
     // Deduplicate by URL
     const seen = new Set<string>();
-    const unique = allResults.filter((r) => {
+    const filtered = allResults.filter((r) => {
       const key = (r.url || "").replace(/\/$/, "").toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
-
-    // Filter out competitors/negatives
-    const filtered = unique.filter((r) => {
-      const text = `${r.title || ""} ${r.url || ""} ${(r.highlights || []).join(" ")}`.toLowerCase();
-      return !NEGATIVE_KEYWORDS.some((kw) => text.includes(kw));
     });
 
     // Get existing leads for dedup
