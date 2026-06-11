@@ -9,17 +9,16 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const OUTREACH_SYSTEM_PROMPT = `You are an expert B2B sales copywriter specializing in AI video transformation tools for Animation and VFX studios.
+const OUTREACH_SYSTEM_PROMPT = `You are an expert B2B sales copywriter.
 
 Write a personalized cold outreach email that:
-- References specific studio pain points (render costs, deadline pressure, manual rotoscoping, pipeline bottlenecks)
-- Positions the product as pipeline acceleration, not replacement
-- Mentions their specific tech stack or recent projects when available
+- References specific pain points and recent signals from the research
+- Mentions the recipient's tech stack or notable recent activity when available
 - Is concise (under 150 words), conversational, and non-salesy
-- Has a clear, low-friction CTA (e.g., "Would a 15-min demo be worth exploring?")
+- Has a clear, low-friction CTA (e.g., "Would a 15-min call be worth exploring?")
 - Never uses generic phrases like "I hope this finds you well"
 
-Tone: Technical peer, not sales rep. Think "engineer who built something useful" not "SDR hitting quota."`;
+Tone: Technical peer, not sales rep.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
