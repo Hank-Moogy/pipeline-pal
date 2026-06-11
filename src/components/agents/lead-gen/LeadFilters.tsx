@@ -85,21 +85,6 @@ export function LeadFilters({ filters, onChange }: LeadFiltersProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <FilterSection icon={<Factory className="h-4 w-4" />} label="Studio Type" defaultOpen>
-          <Select value={filters.studioType} onValueChange={(v) => update({ studioType: v })}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="Animation">Animation</SelectItem>
-              <SelectItem value="VFX">VFX</SelectItem>
-              <SelectItem value="Post-Production">Post-Production</SelectItem>
-              <SelectItem value="Hybrid">Hybrid</SelectItem>
-            </SelectContent>
-          </Select>
-        </FilterSection>
-
         <FilterSection icon={<Gauge className="h-4 w-4" />} label="Fit Score" defaultOpen>
           <div className="space-y-2">
             <Slider
