@@ -7,25 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ICP_QUERIES = [
-  "animation studio using AI rendering pipeline",
-  "VFX studio hybrid production virtual production",
-  "visual effects company AI-powered workflow automation",
-  "animation studio machine learning accelerating pipeline",
-  "VFX company real-time rendering Unreal Engine LED volume",
-  "post-production studio AI compositing neural rendering",
-  "animation studio AI upscaling denoising render farm",
-  "VFX studio cloud rendering GPU pipeline 2024 2025",
-  "animation company Series A B funding 2024 2025",
-  "VFX studio London UK Europe",
-  "animation studio Germany France Spain",
-  "visual effects company AI transformation digital pipeline",
-];
-
-const NEGATIVE_KEYWORDS = [
-  "runway", "pika", "synthesia", "heygen", "d-id", "wonder dynamics",
-  "stability ai", "luma ai", "podcast", "music studio",
-];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
