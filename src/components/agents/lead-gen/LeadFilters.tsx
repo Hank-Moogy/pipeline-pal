@@ -13,7 +13,6 @@ export interface LeadFilterValues {
   companySizeMax: string;
   revenueMin: string;
   revenueMax: string;
-  studioType: string;
   fitScoreMin: number;
   region: string;
 }
