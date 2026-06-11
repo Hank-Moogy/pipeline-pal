@@ -154,7 +154,7 @@ export const emptyFilters: LeadFilterValues = {
   companySizeMax: "",
   revenueMin: "",
   revenueMax: "",
-  studioType: "all",
+  
   fitScoreMin: 0,
   region: "all",
 };
