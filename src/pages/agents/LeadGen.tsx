@@ -358,7 +358,6 @@ export default function LeadGen() {
   // Apply client-side filters
   const filteredLeads = useMemo(() => {
     return leads.filter((l) => {
-      if (filters.studioType && filters.studioType !== "all" && l.studio_type && l.studio_type !== filters.studioType) return false;
       if (filters.fitScoreMin > 0 && (l.fit_score || 0) < filters.fitScoreMin) return false;
       if (filters.region && filters.region !== "all" && l.region && !l.region.toLowerCase().includes(filters.region.toLowerCase())) return false;
       return true;
