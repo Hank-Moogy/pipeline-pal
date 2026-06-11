@@ -33,7 +33,7 @@ export interface LeadResult {
   recent_signals?: string[];
   research_depth?: string;
   last_enriched_at?: string;
-  studio_type?: string;
+  
   website?: string;
   region?: string;
   employee_count?: string;
