@@ -146,7 +146,7 @@ ${formatResults(newsSearch)}
                       funding_stage: { type: "string", description: "Funding stage if known" },
                       location: { type: "string", description: "City, Country" },
                     },
-                    required: ["summary", "studio_type", "fit_score", "fit_reason", "pain_points", "tech_stack", "product_hooks", "champions", "region"],
+                    required: ["summary", "company_type", "fit_score", "fit_reason", "pain_points", "tech_stack", "product_hooks", "champions", "region"],
                     additionalProperties: false,
                   },
                 },
