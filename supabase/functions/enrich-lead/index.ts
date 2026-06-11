@@ -121,7 +121,7 @@ ${formatResults(newsSearch)}
                     type: "object",
                     properties: {
                       summary: { type: "string", description: "2-3 sentence company summary" },
-                      studio_type: { type: "string", enum: ["Animation", "VFX", "Post-Production", "Hybrid", "Other"], description: "Primary studio type" },
+                      company_type: { type: "string", description: "Short label for the type of company (free-form)" },
                       fit_score: { type: "integer", description: "1-10 fit score" },
                       fit_reason: { type: "string", description: "Why this score" },
                       pain_points: { type: "array", items: { type: "string" }, description: "Identified pain points" },
