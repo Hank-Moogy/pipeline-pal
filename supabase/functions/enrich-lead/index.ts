@@ -75,13 +75,13 @@ serve(async (req) => {
         const website = lead.website || "";
 
         // Phase 1: Company search
-        const companySearch = await exaSearch(EXA_API_KEY, `${companyName} animation VFX studio technology pipeline`, "company");
-        
+        const companySearch = await exaSearch(EXA_API_KEY, `${companyName} company overview`, "company");
+
         // Phase 2: People search
-        const peopleSearch = await exaSearch(EXA_API_KEY, `${companyName} CTO "Head of Technology" "VFX Supervisor" "Head of Pipeline"`, "people");
-        
+        const peopleSearch = await exaSearch(EXA_API_KEY, `${companyName} leadership team executives`, "people");
+
         // Phase 3: News search
-        const newsSearch = await exaSearch(EXA_API_KEY, `${companyName} AI adoption project award funding 2024 2025`, "news");
+        const newsSearch = await exaSearch(EXA_API_KEY, `${companyName} news 2024 2025`, "news");
 
         // Phase 4: AI analysis
         const researchContext = `
