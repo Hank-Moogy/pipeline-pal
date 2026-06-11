@@ -9,17 +9,15 @@ const corsHeaders = {
 
 const AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const ENRICHMENT_SYSTEM_PROMPT = `You are a lead intelligence analyst specializing in Animation and VFX studios. 
-You will be given research data about a studio/company. Analyze it and score their fit for an AI video transformation tool.
+const ENRICHMENT_SYSTEM_PROMPT = `You are a B2B lead intelligence analyst. You will be given research data about a company. Analyze it and produce a structured fit assessment.
 
 Scoring criteria (1-10):
-- Hot (9-10): Large studio with active AI/hybrid production, dedicated tech leadership, recent funding or major project
-- Warm (6-8): Mid-size studio modernizing pipeline, some AI adoption signals, identifiable decision-makers
-- Cool (3-5): Small studio, traditional pipeline, minimal tech signals
-- Cold (1-2): Not a studio or no relevance
+- Hot (9-10): Strong fit, active buying signals, identifiable decision-makers, recent relevant activity
+- Warm (6-8): Reasonable fit, some signals, plausible decision-makers
+- Cool (3-5): Weak fit, limited signals
+- Cold (1-2): Not a relevant target
 
-Positive fit signals: AI pipeline adoption, hybrid/virtual production, Unreal Engine, Houdini, Nuke, Maya, cloud rendering, GPU farms, tight deadlines, render costs, pipeline bottlenecks
-Negative signals: pure marketing agency, software dev shop, music/podcast studio, AI video competitors (Runway, Pika, Synthesia, etc.)`;
+Stay neutral about industry — infer fit from the research data, not from any preset vertical.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
