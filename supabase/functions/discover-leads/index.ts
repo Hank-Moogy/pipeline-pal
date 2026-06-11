@@ -40,60 +40,41 @@ serve(async (req) => {
       });
     }
 
-    // Build search queries: user query + up to 3 ICP queries that overlap
-    const queries = [query];
-    const lowerQuery = query.toLowerCase();
-    for (const icpQ of ICP_QUERIES) {
-      if (queries.length >= 4) break;
-      const words = icpQ.toLowerCase().split(/\s+/);
-      if (words.some((w) => lowerQuery.includes(w))) {
-        queries.push(icpQ);
-      }
-    }
-
-    // Search Exa for companies
+    // Search Exa with the user's query only
     const allResults: any[] = [];
-    for (const q of queries) {
-      try {
-        const exaRes = await fetch("https://api.exa.ai/search", {
-          method: "POST",
-          headers: {
-            "x-api-key": EXA_API_KEY,
-            "Content-Type": "application/json",
+    try {
+      const exaRes = await fetch("https://api.exa.ai/search", {
+        method: "POST",
+        headers: {
+          "x-api-key": EXA_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
+          type: "auto",
+          category: "company",
+          numResults: 20,
+          contents: {
+            highlights: { maxCharacters: 2000 },
           },
-          body: JSON.stringify({
-            query: q,
-            type: "auto",
-            category: "company",
-            numResults: 10,
-            contents: {
-              highlights: { maxCharacters: 2000 },
-            },
-          }),
-        });
+        }),
+      });
 
-        if (exaRes.ok) {
-          const data = await exaRes.json();
-          if (data.results) allResults.push(...data.results);
-        }
-      } catch (e) {
-        console.error(`Exa search failed for query: ${q}`, e);
+      if (exaRes.ok) {
+        const data = await exaRes.json();
+        if (data.results) allResults.push(...data.results);
       }
+    } catch (e) {
+      console.error(`Exa search failed for query: ${query}`, e);
     }
 
     // Deduplicate by URL
     const seen = new Set<string>();
-    const unique = allResults.filter((r) => {
+    const filtered = allResults.filter((r) => {
       const key = (r.url || "").replace(/\/$/, "").toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
-
-    // Filter out competitors/negatives
-    const filtered = unique.filter((r) => {
-      const text = `${r.title || ""} ${r.url || ""} ${(r.highlights || []).join(" ")}`.toLowerCase();
-      return !NEGATIVE_KEYWORDS.some((kw) => text.includes(kw));
     });
 
     // Get existing leads for dedup
