@@ -126,7 +126,7 @@ ${formatResults(newsSearch)}
                       fit_reason: { type: "string", description: "Why this score" },
                       pain_points: { type: "array", items: { type: "string" }, description: "Identified pain points" },
                       tech_stack: { type: "array", items: { type: "string" }, description: "Known tools and technologies" },
-                      product_hooks: { type: "array", items: { type: "string" }, description: "Angles to pitch our AI video tool" },
+                      product_hooks: { type: "array", items: { type: "string" }, description: "Angles to pitch the product" },
                       champions: {
                         type: "array",
                         items: {
