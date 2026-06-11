@@ -170,18 +170,48 @@ export default function LeadGen() {
   );
 
   const loadCachedSearch = useCallback(
-    (query: string) => {
+    async (query: string) => {
       const cached = recentSearches.find((r) => r.query === query);
       if (cached && cached.results.length > 0) {
-        setLeads(cached.results);
         setLastQuery(query);
         setHasSearched(true);
+        // Show cached snapshot immediately
+        setLeads(cached.results);
+
+        // Re-fetch fresh rows from DB so enriched fields (added after the
+        // original search) are visible when reopening a past search.
+        try {
+          const ids = cached.results.map((r) => r.id).filter(Boolean);
+          if (ids.length > 0) {
+            const { data: fresh, error } = await supabase
+              .from("lead_candidates")
+              .select("*")
+              .in("id", ids);
+            if (!error && fresh) {
+              const freshMap = new Map(fresh.map((f: any) => [f.id, f]));
+              const merged = cached.results.map((l) => {
+                const f = freshMap.get(l.id);
+                return f ? { ...l, ...f } : l;
+              }) as LeadResult[];
+              setLeads(merged);
+              // Persist the refreshed snapshot back into recentSearches
+              const updatedRecent = recentSearches.map((r) =>
+                r.query === query ? { ...r, results: merged } : r
+              );
+              setRecentSearches(updatedRecent);
+              persistSettings(savedICPs, updatedRecent);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to refresh cached search:", e);
+        }
       } else {
         handleSearch(query);
       }
     },
-    [recentSearches, handleSearch]
+    [recentSearches, handleSearch, savedICPs, persistSettings]
   );
+
 
   const handleSaveICP = useCallback(
     async (name: string, query: string) => {
