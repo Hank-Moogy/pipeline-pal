@@ -186,7 +186,7 @@ ${formatResults(newsSearch)}
           .from("lead_candidates")
           .update({
             summary: enrichment.summary,
-            studio_type: enrichment.studio_type,
+            studio_type: enrichment.company_type,
             fit_score: enrichment.fit_score,
             fit_reason: enrichment.fit_reason,
             pain_points: enrichment.pain_points || [],
