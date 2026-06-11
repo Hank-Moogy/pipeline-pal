@@ -103,8 +103,12 @@ serve(async (req) => {
         summary: (r.highlights || []).slice(0, 2).join(" ").slice(0, 500) || null,
       }));
 
+    let insertedLeads: any[] = [];
     if (inserts.length > 0) {
-      const { error: insertError } = await supabase.from("lead_candidates").insert(inserts);
+      const { data: inserted, error: insertError } = await supabase
+        .from("lead_candidates")
+        .insert(inserts)
+        .select("*");
       if (insertError) {
         console.error("Insert error:", insertError);
         return new Response(JSON.stringify({ error: "Failed to insert leads" }), {
@@ -112,18 +116,12 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      insertedLeads = inserted || [];
     }
 
-    // Fetch the leads we just inserted (plus any recent pending)
-    const { data: leads } = await supabase
-      .from("lead_candidates")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    return new Response(JSON.stringify({ leads: leads || [], inserted: inserts.length }), {
+    // Return ONLY the leads discovered in this search — never mix in
+    // older pending rows from previous (possibly unrelated) queries.
+    return new Response(JSON.stringify({ leads: insertedLeads, inserted: insertedLeads.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
