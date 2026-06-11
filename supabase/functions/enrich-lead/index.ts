@@ -116,7 +116,7 @@ ${formatResults(newsSearch)}
                 type: "function",
                 function: {
                   name: "enrich_lead",
-                  description: "Return structured enrichment data for the studio lead",
+                  description: "Return structured enrichment data for the lead",
                   parameters: {
                     type: "object",
                     properties: {
