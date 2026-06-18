@@ -60,6 +60,19 @@ export default function Pipeline() {
     });
   }, []);
 
+  const toggleSelectAllInStage = useCallback((stageDeals: Deal[]) => {
+    setSelectedDealIds((prev) => {
+      const next = new Set(prev);
+      const allSelected = stageDeals.every((d) => next.has(d.id));
+      if (allSelected) {
+        for (const d of stageDeals) next.delete(d.id);
+      } else {
+        for (const d of stageDeals) next.add(d.id);
+      }
+      return next;
+    });
+  }, []);
+
   const enrichStageEmails = useCallback(async (stage: string, dealIds: string[]) => {
     if (dealIds.length === 0) return;
     setEnrichingStage(stage);
@@ -354,6 +367,13 @@ export default function Pipeline() {
                       <div className="p-3 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
+                            {stageDeals.length > 0 && (
+                              <Checkbox
+                                checked={stageDeals.every((d) => selectedDealIds.has(d.id))}
+                                onCheckedChange={() => toggleSelectAllInStage(stageDeals)}
+                                className="h-3.5 w-3.5 border-border"
+                              />
+                            )}
                             <div className={`h-2.5 w-2.5 rounded-full ${COLUMN_COLORS[stage] || 'bg-muted-foreground'}`} />
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
                               {stage}
