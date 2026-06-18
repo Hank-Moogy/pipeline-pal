@@ -279,6 +279,31 @@ export default function Pipeline() {
     toast.success(`Downloaded ${rows.length - 1} champion${rows.length - 1 === 1 ? '' : 's'}`);
   }, []);
 
+  const downloadStageCsv = useCallback((stageDeals: Deal[], stageDisplayName: string) => {
+    if (stageDeals.length === 0) {
+      toast.info('No deals to export in this stage');
+      return;
+    }
+    const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
+    const rows = stageDeals.map(d => [
+      d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, stageDisplayName, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
+    ].map(v => {
+      if (v == null) return '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeName = stageDisplayName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    a.download = `${safeName}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${stageDeals.length} deal${stageDeals.length === 1 ? '' : 's'}`);
+  }, []);
+
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
       const { draggableId, destination } = result;
