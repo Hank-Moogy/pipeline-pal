@@ -57,6 +57,24 @@ export default function Pipeline() {
   const [selectedDealIds, setSelectedDealIds] = useState<Set<string>>(new Set());
   const [enrichingStage, setEnrichingStage] = useState<string | null>(null);
 
+  // Stage label overrides (display name → canonical name stays in DB)
+  const [stageLabels, setStageLabels] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem('mago-stage-labels');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameStage, setRenameStage] = useState<string>('');
+  const [renameValue, setRenameValue] = useState<string>('');
+
+  const saveStageLabels = useCallback((next: Record<string, string>) => {
+    setStageLabels(next);
+    localStorage.setItem('mago-stage-labels', JSON.stringify(next));
+  }, []);
+
   const toggleDealSelected = useCallback((id: string) => {
     setSelectedDealIds((prev) => {
       const next = new Set(prev);
