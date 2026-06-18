@@ -471,6 +471,11 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
                   </div>
                   {!virtual && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      {!c.email && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Find email (Apollo → Hunter)" onClick={() => handleFindEmail(c.id)} disabled={findingFor === c.id}>
+                          {findingFor === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5 text-primary" />}
+                        </Button>
+                      )}
                       {!c.is_champion && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Set as Champion" onClick={() => handleSetChampion(c.id)}>
                           <Star className="h-3.5 w-3.5 text-amber-500" />
