@@ -166,6 +166,46 @@ export default function Pipeline() {
     return grouped;
   }, [filteredDeals]);
 
+  const downloadChampionsCsv = useCallback(async (stageDeals: Deal[]) => {
+    const dealIds = stageDeals.map((d) => d.id);
+    if (dealIds.length === 0) return;
+    const { data: contacts, error } = await supabase
+      .from('deal_contacts')
+      .select('deal_id, first_name, last_name, linkedin_url, company, email, is_champion')
+      .in('deal_id', dealIds)
+      .eq('is_champion', true);
+    if (error) {
+      toast.error('Failed to load champions');
+      return;
+    }
+    const dealById = new Map(stageDeals.map((d) => [d.id, d]));
+    const rows: string[][] = [['Name', 'Surname', 'LinkedIn', 'Company', 'Email']];
+    for (const c of contacts || []) {
+      const d = dealById.get(c.deal_id);
+      rows.push([
+        c.first_name || '',
+        c.last_name || '',
+        c.linkedin_url || '',
+        c.company || d?.company || '',
+        c.email || '',
+      ]);
+    }
+    if (rows.length === 1) {
+      toast.info('No champions found in Email follow up');
+      return;
+    }
+    const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = rows.map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `email-followup-champions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${rows.length - 1} champion${rows.length - 1 === 1 ? '' : 's'}`);
+  }, []);
+
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
       const { draggableId, destination } = result;
