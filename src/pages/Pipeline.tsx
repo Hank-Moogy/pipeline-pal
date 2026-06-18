@@ -326,10 +326,10 @@ export default function Pipeline() {
         toast.error('Failed to move deal');
         queryClient.invalidateQueries({ queryKey: ['all-deals'] });
       } else {
-        toast.success(`Moved to ${newStatus}`);
+        toast.success(`Moved to ${stageLabels[newStatus] ?? newStatus}`);
       }
     },
-    [deals, queryClient],
+    [deals, queryClient, stageLabels],
   );
 
   return (
