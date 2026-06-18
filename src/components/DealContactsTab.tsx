@@ -339,8 +339,41 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
   const [showAdd, setShowAdd] = useState(false);
   const [editContact, setEditContact] = useState<DealContact | null>(null);
   const [viewContact, setViewContact] = useState<DealContact | null>(null);
+  const [findingFor, setFindingFor] = useState<string | null>(null);
+  const [bulkFinding, setBulkFinding] = useState(false);
 
-  // Build the display list: saved contacts + a virtual "main contact" from deal fields if not already in the list
+  const handleFindEmail = async (contactId: string) => {
+    setFindingFor(contactId);
+    try {
+      const data = await runEmailCascade({ contactId });
+      const r = data.results[0]?.result;
+      if (r?.email) {
+        toast.success(`Found via ${r.source}: ${r.email}`);
+      } else {
+        const tried = (r?.tried ?? []).map((t) => `${t.provider}${t.reason ? ` (${t.reason})` : ''}`).join(', ');
+        toast.error(`No email found. Tried: ${tried || 'nothing'}`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+    } catch (e) {
+      toast.error(`Lookup failed: ${e instanceof Error ? e.message : 'unknown'}`);
+    } finally {
+      setFindingFor(null);
+    }
+  };
+
+  const handleBulkFind = async () => {
+    setBulkFinding(true);
+    try {
+      const data = await runEmailCascade({ dealId });
+      toast.success(`Found ${data.summary.found} of ${data.summary.processed} emails`);
+      queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+    } catch (e) {
+      toast.error(`Bulk lookup failed: ${e instanceof Error ? e.message : 'unknown'}`);
+    } finally {
+      setBulkFinding(false);
+    }
+  };
+
   const mainContactFromDeal: DealContact | null = (() => {
     if (!deal) return null;
     const hasName = deal.first_name?.trim() || deal.last_name?.trim();
