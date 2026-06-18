@@ -67,23 +67,19 @@ serve(async (req) => {
       });
     }
 
-    const enriched: any[] = [];
-
-    for (const lead of leads) {
+    // Process leads in parallel to avoid timing out on bulk enrichment.
+    const results = await Promise.all(leads.map(async (lead) => {
       try {
         const companyName = lead.company || "Unknown";
         const website = lead.website || "";
 
-        // Phase 1: Company search
-        const companySearch = await exaSearch(EXA_API_KEY, `${companyName} company overview`, "company");
+        // Run all 3 Exa searches in parallel
+        const [companySearch, peopleSearch, newsSearch] = await Promise.all([
+          exaSearch(EXA_API_KEY, `${companyName} company overview`, "company"),
+          exaSearch(EXA_API_KEY, `${companyName} leadership team executives`, "linkedin profile"),
+          exaSearch(EXA_API_KEY, `${companyName} news 2024 2025`, "news"),
+        ]);
 
-        // Phase 2: People search
-        const peopleSearch = await exaSearch(EXA_API_KEY, `${companyName} leadership team executives`, "people");
-
-        // Phase 3: News search
-        const newsSearch = await exaSearch(EXA_API_KEY, `${companyName} news 2024 2025`, "news");
-
-        // Phase 4: AI analysis
         const researchContext = `
 COMPANY: ${companyName}
 WEBSITE: ${website}
@@ -106,7 +102,7 @@ ${formatResults(newsSearch)}
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash",
             messages: [
               { role: "system", content: ENRICHMENT_SYSTEM_PROMPT },
               { role: "user", content: researchContext },
@@ -157,31 +153,20 @@ ${formatResults(newsSearch)}
         });
 
         if (!aiResponse.ok) {
-          const status = aiResponse.status;
-          if (status === 429) {
-            return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
-              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          if (status === 402) {
-            return new Response(JSON.stringify({ error: "AI credits exhausted. Add funds in Settings > Workspace > Usage." }), {
-              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          console.error("AI gateway error:", status, await aiResponse.text());
-          continue;
+          const txt = await aiResponse.text();
+          console.error(`AI gateway error for ${lead.id}: ${aiResponse.status} ${txt}`);
+          return null;
         }
 
         const aiData = await aiResponse.json();
         const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
         if (!toolCall) {
-          console.error("No tool call in AI response");
-          continue;
+          console.error(`No tool call in AI response for ${lead.id}`);
+          return null;
         }
 
         const enrichment = JSON.parse(toolCall.function.arguments);
 
-        // Update lead
         const { error: updateErr } = await supabase
           .from("lead_candidates")
           .update({
@@ -203,12 +188,18 @@ ${formatResults(newsSearch)}
           })
           .eq("id", lead.id);
 
-        if (updateErr) console.error("Update error:", updateErr);
-        else enriched.push({ id: lead.id, ...enrichment });
+        if (updateErr) {
+          console.error("Update error:", updateErr);
+          return null;
+        }
+        return { id: lead.id, ...enrichment };
       } catch (e) {
         console.error(`Enrichment failed for lead ${lead.id}:`, e);
+        return null;
       }
-    }
+    }));
+
+    const enriched = results.filter((r): r is NonNullable<typeof r> => r !== null);
 
     return new Response(JSON.stringify({ enriched, total: enriched.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
