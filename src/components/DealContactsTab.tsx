@@ -510,10 +510,14 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
         </div>
       </ScrollArea>
 
-      <div className="shrink-0 border-t border-border/40 pt-3">
-        <Button size="sm" className="w-full gap-1.5" onClick={() => setShowAdd(true)}>
+      <div className="shrink-0 border-t border-border/40 pt-3 flex gap-2">
+        <Button size="sm" className="flex-1 gap-1.5" onClick={() => setShowAdd(true)}>
           <Plus className="h-3.5 w-3.5" />
           Add Contact
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={handleBulkFind} disabled={bulkFinding} title="Find missing emails via Apollo → Hunter cascade">
+          {bulkFinding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          Find emails
         </Button>
       </div>
 
