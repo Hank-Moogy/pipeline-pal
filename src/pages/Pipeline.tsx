@@ -381,6 +381,23 @@ export default function Pipeline() {
                             {fmtCurrency(totalValue)}
                           </p>
                         )}
+                        {(() => {
+                          const selectedInStage = stageDeals.filter((d) => selectedDealIds.has(d.id));
+                          if (selectedInStage.length === 0) return null;
+                          const busy = enrichingStage === stage;
+                          return (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              disabled={busy}
+                              className="w-full h-7 mt-1 gap-1.5 text-[11px]"
+                              onClick={() => enrichStageEmails(stage, selectedInStage.map((d) => d.id))}
+                            >
+                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                              Enrich {selectedInStage.length} deal{selectedInStage.length === 1 ? '' : 's'}
+                            </Button>
+                          );
+                        })()}
                       </div>
 
                       {/* Cards */}
