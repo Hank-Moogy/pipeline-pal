@@ -11,11 +11,17 @@ import { Badge } from '@/components/ui/badge';
 import { STAGE_ORDER } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter, Sparkles, Loader2 } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter, Sparkles, Loader2, MoreHorizontal, Pencil, FileDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { AppLayout } from '@/components/AppLayout';
 import { toast } from 'sonner';
 
@@ -50,6 +56,24 @@ export default function Pipeline() {
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
   const [selectedDealIds, setSelectedDealIds] = useState<Set<string>>(new Set());
   const [enrichingStage, setEnrichingStage] = useState<string | null>(null);
+
+  // Stage label overrides (display name → canonical name stays in DB)
+  const [stageLabels, setStageLabels] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem('mago-stage-labels');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameStage, setRenameStage] = useState<string>('');
+  const [renameValue, setRenameValue] = useState<string>('');
+
+  const saveStageLabels = useCallback((next: Record<string, string>) => {
+    setStageLabels(next);
+    localStorage.setItem('mago-stage-labels', JSON.stringify(next));
+  }, []);
 
   const toggleDealSelected = useCallback((id: string) => {
     setSelectedDealIds((prev) => {
@@ -255,6 +279,31 @@ export default function Pipeline() {
     toast.success(`Downloaded ${rows.length - 1} champion${rows.length - 1 === 1 ? '' : 's'}`);
   }, []);
 
+  const downloadStageCsv = useCallback((stageDeals: Deal[], stageDisplayName: string) => {
+    if (stageDeals.length === 0) {
+      toast.info('No deals to export in this stage');
+      return;
+    }
+    const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
+    const rows = stageDeals.map(d => [
+      d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, stageDisplayName, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
+    ].map(v => {
+      if (v == null) return '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeName = stageDisplayName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    a.download = `${safeName}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${stageDeals.length} deal${stageDeals.length === 1 ? '' : 's'}`);
+  }, []);
+
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
       const { draggableId, destination } = result;
@@ -277,10 +326,10 @@ export default function Pipeline() {
         toast.error('Failed to move deal');
         queryClient.invalidateQueries({ queryKey: ['all-deals'] });
       } else {
-        toast.success(`Moved to ${newStatus}`);
+        toast.success(`Moved to ${stageLabels[newStatus] ?? newStatus}`);
       }
     },
-    [deals, queryClient],
+    [deals, queryClient, stageLabels],
   );
 
   return (
@@ -376,7 +425,7 @@ export default function Pipeline() {
                             )}
                             <div className={`h-2.5 w-2.5 rounded-full ${COLUMN_COLORS[stage] || 'bg-muted-foreground'}`} />
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-                              {stage}
+                              {stageLabels[stage] ?? stage}
                             </h3>
                           </div>
                           <div className="flex items-center gap-1">
@@ -394,6 +443,39 @@ export default function Pipeline() {
                             <Badge variant="secondary" className="text-[11px] font-medium h-5 px-1.5">
                               {stageDeals.length}
                             </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5"
+                                  title="Stage actions"
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs"
+                                  onClick={() => {
+                                    setRenameStage(stage);
+                                    setRenameValue(stageLabels[stage] ?? stage);
+                                    setRenameDialogOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Rename stage
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs"
+                                  onClick={() => downloadStageCsv(stageDeals, stageLabels[stage] ?? stage)}
+                                >
+                                  <FileDown className="h-3.5 w-3.5" />
+                                  Download CSV
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                         {totalValue > 0 && (
@@ -474,6 +556,46 @@ export default function Pipeline() {
         onClose={() => setSelectedDealId(null)}
         uploadId={null}
       />
+
+      {/* Rename Stage Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Stage</DialogTitle>
+            <DialogDescription className="text-xs">
+              Change how "{stageLabels[renameStage] ?? renameStage}" appears across the pipeline.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="stage-name">Display Name</Label>
+              <Input
+                id="stage-name"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                placeholder="Stage name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (renameValue.trim()) {
+                  saveStageLabels({ ...stageLabels, [renameStage]: renameValue.trim() });
+                  setRenameDialogOpen(false);
+                  toast.success(`Stage renamed to "${renameValue.trim()}"`);
+                }
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Lead Dialog */}
       <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}>
