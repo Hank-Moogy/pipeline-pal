@@ -158,60 +158,66 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: contacts, error } = await supabase
-      .from("deal_contacts")
-      .select("id, first_name, last_name, company, linkedin_url, email")
-      .in("id", ids);
-    if (error) throw error;
-
     const results: Array<{ contactId: string; result: EnrichResult }> = [];
 
-    for (const c of contacts ?? []) {
-      if (c.email) {
-        results.push({
-          contactId: c.id,
-          result: { email: c.email, source: "existing", confidence: 1, tried: [] },
-        });
-        continue;
-      }
+    if (ids.length > 0) {
+      const { data: contacts, error } = await supabase
+        .from("deal_contacts")
+        .select("id, first_name, last_name, company, linkedin_url, email")
+        .in("id", ids);
+      if (error) throw error;
 
-      const domain = domainFromCompany(c.company, c.linkedin_url);
-      const tried: EnrichResult["tried"] = [];
-      let final: EnrichResult = { email: null, source: null, confidence: null, tried };
-
-      // Provider cascade
-      const providers: Array<{ name: string; fn: () => Promise<{ email: string | null; confidence: number | null; reason?: string }> }> = [
-        { name: "apollo", fn: () => tryApollo({ ...c, domain }) },
-        { name: "hunter", fn: () => tryHunter({ first_name: c.first_name, last_name: c.last_name, domain }) },
-      ];
-
-      for (const p of providers) {
-        try {
-          const r = await p.fn();
-          tried.push({ provider: p.name, ok: !!r.email, reason: r.reason });
-          if (r.email) {
-            final = { email: r.email, source: p.name, confidence: r.confidence, tried };
-            break;
-          }
-        } catch (e) {
-          tried.push({ provider: p.name, ok: false, reason: String(e).slice(0, 100) });
+      for (const c of contacts ?? []) {
+        if (c.email) {
+          results.push({
+            contactId: c.id,
+            result: { email: c.email, source: "existing", confidence: 1, tried: [] },
+          });
+          continue;
         }
-      }
 
-      if (final.email) {
-        await supabase
-          .from("deal_contacts")
-          .update({ email: final.email })
-          .eq("id", c.id);
-      }
+        const domain = domainFromCompany(c.company, c.linkedin_url);
+        const tried: EnrichResult["tried"] = [];
+        let final: EnrichResult = { email: null, source: null, confidence: null, tried };
 
-      results.push({ contactId: c.id, result: final });
+        const providers: Array<{ name: string; fn: () => Promise<{ email: string | null; confidence: number | null; reason?: string }> }> = [
+          { name: "apollo", fn: () => tryApollo({ ...c, domain }) },
+          { name: "hunter", fn: () => tryHunter({ first_name: c.first_name, last_name: c.last_name, domain }) },
+        ];
+
+        for (const p of providers) {
+          try {
+            const r = await p.fn();
+            tried.push({ provider: p.name, ok: !!r.email, reason: r.reason });
+            if (r.email) {
+              final = { email: r.email, source: p.name, confidence: r.confidence, tried };
+              break;
+            }
+          } catch (e) {
+            tried.push({ provider: p.name, ok: false, reason: String(e).slice(0, 100) });
+          }
+        }
+
+        if (final.email) {
+          await supabase
+            .from("deal_contacts")
+            .update({ email: final.email })
+            .eq("id", c.id);
+        }
+
+        results.push({ contactId: c.id, result: final });
+      }
     }
 
     const hits = results.filter((r) => r.result.email && r.result.source !== "existing").length;
+    const leadHits = leadResults.filter((r) => !!r.result.email).length;
 
     return new Response(
-      JSON.stringify({ results, summary: { processed: results.length, found: hits } }),
+      JSON.stringify({
+        results,
+        leads: leadResults,
+        summary: { processed: results.length, found: hits, leadsProcessed: leadResults.length, leadsFound: leadHits },
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
