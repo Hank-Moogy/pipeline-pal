@@ -279,29 +279,48 @@ export default function Pipeline() {
     toast.success(`Downloaded ${rows.length - 1} champion${rows.length - 1 === 1 ? '' : 's'}`);
   }, []);
 
-  const downloadStageCsv = useCallback((stageDeals: Deal[], stageDisplayName: string) => {
-    if (stageDeals.length === 0) {
+  const downloadStageCsv = useCallback(async (stageDeals: Deal[], stageDisplayName: string) => {
+    const dealIds = stageDeals.map((d) => d.id);
+    if (dealIds.length === 0) {
       toast.info('No deals to export in this stage');
       return;
     }
-    const headers = ['First Name','Last Name','Company','Job Title','Email','Phone','LinkedIn','Country','Address','Status','Deal Value','Actual ACV','Prospect Owner','Next Steps','Lost Reason','Company Vertical','Company Size','Description','Strongest Connection','Closed Date'];
-    const rows = stageDeals.map(d => [
-      d.first_name, d.last_name, d.company, d.job_title, d.email, d.phone, d.linkedin_url, d.country, d.address, stageDisplayName, d.deal_value, d.actual_acv, d.prospect_owner, d.next_steps, d.lost_reason, d.company_vertical, d.company_size, d.description, d.strongest_connection, d.closed_date
-    ].map(v => {
-      if (v == null) return '';
-      const s = String(v);
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const { data: contacts, error } = await supabase
+      .from('deal_contacts')
+      .select('deal_id, first_name, last_name, linkedin_url, company, email, is_champion')
+      .in('deal_id', dealIds)
+      .eq('is_champion', true);
+    if (error) {
+      toast.error('Failed to load champions');
+      return;
+    }
+    const dealById = new Map(stageDeals.map((d) => [d.id, d]));
+    const rows: string[][] = [['Name', 'Surname', 'LinkedIn', 'Company', 'Email']];
+    for (const c of contacts || []) {
+      const d = dealById.get(c.deal_id);
+      rows.push([
+        c.first_name || '',
+        c.last_name || '',
+        c.linkedin_url || '',
+        c.company || d?.company || '',
+        c.email || '',
+      ]);
+    }
+    if (rows.length === 1) {
+      toast.info('No champions found in this stage');
+      return;
+    }
+    const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = rows.map((r) => r.map(esc).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     const safeName = stageDisplayName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    a.download = `${safeName}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${safeName}-champions-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${stageDeals.length} deal${stageDeals.length === 1 ? '' : 's'}`);
+    toast.success(`Exported ${rows.length - 1} champion${rows.length - 1 === 1 ? '' : 's'}`);
   }, []);
 
   const handleDragEnd = useCallback(
