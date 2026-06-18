@@ -16,6 +16,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter, Sparkles, Loader2, MoreHorizontal, Pencil, FileDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { AppLayout } from '@/components/AppLayout';
 import { toast } from 'sonner';
 
