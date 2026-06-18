@@ -410,8 +410,22 @@ export default function Pipeline() {
                                   ref={dragProvided.innerRef}
                                   {...dragProvided.draggableProps}
                                   {...dragProvided.dragHandleProps}
-                                  className={dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}
+                                  className={`relative group ${dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}`}
                                 >
+                                  <div
+                                    className="absolute top-1.5 left-1.5 z-10"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                  >
+                                    <Checkbox
+                                      checked={selectedDealIds.has(deal.id)}
+                                      onCheckedChange={() => toggleDealSelected(deal.id)}
+                                      className={`h-3.5 w-3.5 bg-background/80 backdrop-blur-sm border-border ${
+                                        selectedDealIds.has(deal.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'
+                                      }`}
+                                    />
+                                  </div>
                                   <DealCard deal={deal} onClick={(d) => setSelectedDealId(d.id)} />
                                 </div>
                               )}
