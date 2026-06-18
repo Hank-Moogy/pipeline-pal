@@ -9,9 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
-  User, Plus, Star, Mail, Phone, Briefcase, Linkedin, Loader2, Trash2, Pencil, Crown, Building2,
+  User, Plus, Star, Mail, Phone, Briefcase, Linkedin, Loader2, Trash2, Pencil, Crown, Building2, Search, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+async function runEmailCascade(opts: { contactId?: string; dealId?: string }) {
+  const { data, error } = await supabase.functions.invoke('find-email-cascade', { body: opts });
+  if (error) throw error;
+  return data as { results: Array<{ contactId: string; result: { email: string | null; source: string | null; tried: { provider: string; ok: boolean; reason?: string }[] } }>; summary: { processed: number; found: number } };
+}
 
 export interface DealContact {
   id: string;
@@ -333,8 +339,41 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
   const [showAdd, setShowAdd] = useState(false);
   const [editContact, setEditContact] = useState<DealContact | null>(null);
   const [viewContact, setViewContact] = useState<DealContact | null>(null);
+  const [findingFor, setFindingFor] = useState<string | null>(null);
+  const [bulkFinding, setBulkFinding] = useState(false);
 
-  // Build the display list: saved contacts + a virtual "main contact" from deal fields if not already in the list
+  const handleFindEmail = async (contactId: string) => {
+    setFindingFor(contactId);
+    try {
+      const data = await runEmailCascade({ contactId });
+      const r = data.results[0]?.result;
+      if (r?.email) {
+        toast.success(`Found via ${r.source}: ${r.email}`);
+      } else {
+        const tried = (r?.tried ?? []).map((t) => `${t.provider}${t.reason ? ` (${t.reason})` : ''}`).join(', ');
+        toast.error(`No email found. Tried: ${tried || 'nothing'}`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+    } catch (e) {
+      toast.error(`Lookup failed: ${e instanceof Error ? e.message : 'unknown'}`);
+    } finally {
+      setFindingFor(null);
+    }
+  };
+
+  const handleBulkFind = async () => {
+    setBulkFinding(true);
+    try {
+      const data = await runEmailCascade({ dealId });
+      toast.success(`Found ${data.summary.found} of ${data.summary.processed} emails`);
+      queryClient.invalidateQueries({ queryKey: ['deal_contacts', dealId] });
+    } catch (e) {
+      toast.error(`Bulk lookup failed: ${e instanceof Error ? e.message : 'unknown'}`);
+    } finally {
+      setBulkFinding(false);
+    }
+  };
+
   const mainContactFromDeal: DealContact | null = (() => {
     if (!deal) return null;
     const hasName = deal.first_name?.trim() || deal.last_name?.trim();
@@ -432,6 +471,11 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
                   </div>
                   {!virtual && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      {!c.email && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Find email (Apollo → Hunter)" onClick={() => handleFindEmail(c.id)} disabled={findingFor === c.id}>
+                          {findingFor === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5 text-primary" />}
+                        </Button>
+                      )}
                       {!c.is_champion && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Set as Champion" onClick={() => handleSetChampion(c.id)}>
                           <Star className="h-3.5 w-3.5 text-amber-500" />
@@ -466,10 +510,14 @@ export function DealContactsTab({ dealId, deal }: { dealId: string; deal?: DealF
         </div>
       </ScrollArea>
 
-      <div className="shrink-0 border-t border-border/40 pt-3">
-        <Button size="sm" className="w-full gap-1.5" onClick={() => setShowAdd(true)}>
+      <div className="shrink-0 border-t border-border/40 pt-3 flex gap-2">
+        <Button size="sm" className="flex-1 gap-1.5" onClick={() => setShowAdd(true)}>
           <Plus className="h-3.5 w-3.5" />
           Add Contact
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={handleBulkFind} disabled={bulkFinding} title="Find missing emails via Apollo → Hunter cascade">
+          {bulkFinding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          Find emails
         </Button>
       </div>
 
