@@ -557,6 +557,46 @@ export default function Pipeline() {
         uploadId={null}
       />
 
+      {/* Rename Stage Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Stage</DialogTitle>
+            <DialogDescription className="text-xs">
+              Change how "{stageLabels[renameStage] ?? renameStage}" appears across the pipeline.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="stage-name">Display Name</Label>
+              <Input
+                id="stage-name"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                placeholder="Stage name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (renameValue.trim()) {
+                  saveStageLabels({ ...stageLabels, [renameStage]: renameValue.trim() });
+                  setRenameDialogOpen(false);
+                  toast.success(`Stage renamed to "${renameValue.trim()}"`);
+                }
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Lead Dialog */}
       <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}>
         <DialogContent className="sm:max-w-md">
