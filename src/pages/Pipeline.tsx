@@ -101,13 +101,46 @@ export default function Pipeline() {
     if (dealIds.length === 0) return;
     setEnrichingStage(stage);
     try {
+      // Pre-check: skip if everything already has an email (avoid wasting API credits)
+      const [{ data: dealRows, error: dealErr }, { data: contactRows, error: contactErr }] = await Promise.all([
+        supabase.from('deals').select('id, email').in('id', dealIds),
+        supabase.from('deal_contacts').select('id, email').in('deal_id', dealIds),
+      ]);
+      if (dealErr) throw dealErr;
+      if (contactErr) throw contactErr;
+
+      const leadsMissing = (dealRows ?? []).filter((d) => !d.email).length;
+      const contactsMissing = (contactRows ?? []).filter((c) => !c.email).length;
+      const totalContacts = contactRows?.length ?? 0;
+      const totalLeads = dealRows?.length ?? 0;
+
+      if (leadsMissing === 0 && contactsMissing === 0) {
+        toast.info('Already enriched — every lead and contact in this selection already has an email. No API credits used.');
+        setSelectedDealIds((prev) => {
+          const next = new Set(prev);
+          for (const id of dealIds) next.delete(id);
+          return next;
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('find-email-cascade', {
         body: { dealIds },
       });
       if (error) throw error;
       const found = data?.summary?.found ?? 0;
+      const processed = data?.summary?.processed ?? contactsMissing;
       const leadsFound = data?.summary?.leadsFound ?? 0;
-      toast.success(`Enriched ${found} contact${found === 1 ? '' : 's'} + ${leadsFound} lead${leadsFound === 1 ? '' : 's'}`);
+      const leadsProcessed = data?.summary?.leadsProcessed ?? leadsMissing;
+
+      // Totals including already-enriched ones so the user sees full coverage
+      const contactsWithEmail = (totalContacts - contactsMissing) + found;
+      const leadsWithEmail = (totalLeads - leadsMissing) + leadsFound;
+
+      toast.success(
+        `Enrichment complete · Contacts: ${contactsWithEmail}/${totalContacts} have an email (+${found} new of ${processed} tried) · Leads: ${leadsWithEmail}/${totalLeads} (+${leadsFound} new of ${leadsProcessed} tried)`,
+        { duration: 8000 },
+      );
       setSelectedDealIds((prev) => {
         const next = new Set(prev);
         for (const id of dealIds) next.delete(id);
