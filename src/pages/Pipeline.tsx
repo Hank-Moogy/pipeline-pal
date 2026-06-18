@@ -47,6 +47,41 @@ export default function Pipeline() {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [selectedDealIds, setSelectedDealIds] = useState<Set<string>>(new Set());
+  const [enrichingStage, setEnrichingStage] = useState<string | null>(null);
+
+  const toggleDealSelected = useCallback((id: string) => {
+    setSelectedDealIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const enrichStageEmails = useCallback(async (stage: string, dealIds: string[]) => {
+    if (dealIds.length === 0) return;
+    setEnrichingStage(stage);
+    try {
+      const { data, error } = await supabase.functions.invoke('find-email-cascade', {
+        body: { dealIds },
+      });
+      if (error) throw error;
+      const found = data?.summary?.found ?? 0;
+      const leadsFound = data?.summary?.leadsFound ?? 0;
+      toast.success(`Enriched ${found} contact${found === 1 ? '' : 's'} + ${leadsFound} lead${leadsFound === 1 ? '' : 's'}`);
+      setSelectedDealIds((prev) => {
+        const next = new Set(prev);
+        for (const id of dealIds) next.delete(id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+    } catch (e: any) {
+      toast.error(`Enrich failed: ${e?.message || e}`);
+    } finally {
+      setEnrichingStage(null);
+    }
+  }, [queryClient]);
 
   // Keep selectedDeal in sync with live query data
   const selectedDeal = useMemo(
