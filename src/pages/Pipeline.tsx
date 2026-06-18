@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter } from 'lucide-react';
+import { LogOut, TrendingUp, BarChart3, Kanban, Search, Bot, Download, Plus, Filter, Sparkles, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AppLayout } from '@/components/AppLayout';
 import { toast } from 'sonner';
 
@@ -47,6 +48,41 @@ export default function Pipeline() {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [selectedDealIds, setSelectedDealIds] = useState<Set<string>>(new Set());
+  const [enrichingStage, setEnrichingStage] = useState<string | null>(null);
+
+  const toggleDealSelected = useCallback((id: string) => {
+    setSelectedDealIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const enrichStageEmails = useCallback(async (stage: string, dealIds: string[]) => {
+    if (dealIds.length === 0) return;
+    setEnrichingStage(stage);
+    try {
+      const { data, error } = await supabase.functions.invoke('find-email-cascade', {
+        body: { dealIds },
+      });
+      if (error) throw error;
+      const found = data?.summary?.found ?? 0;
+      const leadsFound = data?.summary?.leadsFound ?? 0;
+      toast.success(`Enriched ${found} contact${found === 1 ? '' : 's'} + ${leadsFound} lead${leadsFound === 1 ? '' : 's'}`);
+      setSelectedDealIds((prev) => {
+        const next = new Set(prev);
+        for (const id of dealIds) next.delete(id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-deals'] });
+    } catch (e: any) {
+      toast.error(`Enrich failed: ${e?.message || e}`);
+    } finally {
+      setEnrichingStage(null);
+    }
+  }, [queryClient]);
 
   // Keep selectedDeal in sync with live query data
   const selectedDeal = useMemo(
@@ -345,6 +381,23 @@ export default function Pipeline() {
                             {fmtCurrency(totalValue)}
                           </p>
                         )}
+                        {(() => {
+                          const selectedInStage = stageDeals.filter((d) => selectedDealIds.has(d.id));
+                          if (selectedInStage.length === 0) return null;
+                          const busy = enrichingStage === stage;
+                          return (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              disabled={busy}
+                              className="w-full h-7 mt-1 gap-1.5 text-[11px]"
+                              onClick={() => enrichStageEmails(stage, selectedInStage.map((d) => d.id))}
+                            >
+                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                              Enrich {selectedInStage.length} deal{selectedInStage.length === 1 ? '' : 's'}
+                            </Button>
+                          );
+                        })()}
                       </div>
 
                       {/* Cards */}
@@ -357,8 +410,22 @@ export default function Pipeline() {
                                   ref={dragProvided.innerRef}
                                   {...dragProvided.draggableProps}
                                   {...dragProvided.dragHandleProps}
-                                  className={dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}
+                                  className={`relative group ${dragSnapshot.isDragging ? 'opacity-90 rotate-[1deg]' : ''}`}
                                 >
+                                  <div
+                                    className="absolute top-1.5 left-1.5 z-10"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                  >
+                                    <Checkbox
+                                      checked={selectedDealIds.has(deal.id)}
+                                      onCheckedChange={() => toggleDealSelected(deal.id)}
+                                      className={`h-3.5 w-3.5 bg-background/80 backdrop-blur-sm border-border ${
+                                        selectedDealIds.has(deal.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'
+                                      }`}
+                                    />
+                                  </div>
                                   <DealCard deal={deal} onClick={(d) => setSelectedDealId(d.id)} />
                                 </div>
                               )}
