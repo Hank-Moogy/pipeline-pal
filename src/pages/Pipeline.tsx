@@ -60,6 +60,19 @@ export default function Pipeline() {
     });
   }, []);
 
+  const toggleSelectAllInStage = useCallback((stageDeals: Deal[]) => {
+    setSelectedDealIds((prev) => {
+      const next = new Set(prev);
+      const allSelected = stageDeals.every((d) => next.has(d.id));
+      if (allSelected) {
+        for (const d of stageDeals) next.delete(d.id);
+      } else {
+        for (const d of stageDeals) next.add(d.id);
+      }
+      return next;
+    });
+  }, []);
+
   const enrichStageEmails = useCallback(async (stage: string, dealIds: string[]) => {
     if (dealIds.length === 0) return;
     setEnrichingStage(stage);
