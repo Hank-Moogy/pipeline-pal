@@ -425,7 +425,7 @@ export default function Pipeline() {
                             )}
                             <div className={`h-2.5 w-2.5 rounded-full ${COLUMN_COLORS[stage] || 'bg-muted-foreground'}`} />
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-                              {stage}
+                              {stageLabels[stage] ?? stage}
                             </h3>
                           </div>
                           <div className="flex items-center gap-1">
@@ -443,6 +443,39 @@ export default function Pipeline() {
                             <Badge variant="secondary" className="text-[11px] font-medium h-5 px-1.5">
                               {stageDeals.length}
                             </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5"
+                                  title="Stage actions"
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs"
+                                  onClick={() => {
+                                    setRenameStage(stage);
+                                    setRenameValue(stageLabels[stage] ?? stage);
+                                    setRenameDialogOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Rename stage
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs"
+                                  onClick={() => downloadStageCsv(stageDeals, stageLabels[stage] ?? stage)}
+                                >
+                                  <FileDown className="h-3.5 w-3.5" />
+                                  Download CSV
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                         {totalValue > 0 && (
