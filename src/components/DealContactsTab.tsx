@@ -9,9 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
-  User, Plus, Star, Mail, Phone, Briefcase, Linkedin, Loader2, Trash2, Pencil, Crown, Building2,
+  User, Plus, Star, Mail, Phone, Briefcase, Linkedin, Loader2, Trash2, Pencil, Crown, Building2, Search, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+async function runEmailCascade(opts: { contactId?: string; dealId?: string }) {
+  const { data, error } = await supabase.functions.invoke('find-email-cascade', { body: opts });
+  if (error) throw error;
+  return data as { results: Array<{ contactId: string; result: { email: string | null; source: string | null; tried: { provider: string; ok: boolean; reason?: string }[] } }>; summary: { processed: number; found: number } };
+}
 
 export interface DealContact {
   id: string;
