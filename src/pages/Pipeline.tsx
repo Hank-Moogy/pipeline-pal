@@ -283,9 +283,22 @@ export default function Pipeline() {
                               {stage}
                             </h3>
                           </div>
-                          <Badge variant="secondary" className="text-[11px] font-medium h-5 px-1.5">
-                            {stageDeals.length}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            {stage === 'Email follow up' && stageDeals.length > 0 && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5"
+                                title="Download champions CSV"
+                                onClick={() => downloadChampionsCsv(stageDeals)}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Badge variant="secondary" className="text-[11px] font-medium h-5 px-1.5">
+                              {stageDeals.length}
+                            </Badge>
+                          </div>
                         </div>
                         {totalValue > 0 && (
                           <p className="text-[11px] text-muted-foreground pl-[18px]">
