@@ -319,7 +319,7 @@ export default function LeadGen() {
 
   const insertDealFromLead = useCallback(async (lead: LeadResult, uploadId: string) => {
     const nameParts = (lead.contact_name || "").split(" ");
-    await supabase.from("deals").insert({
+    const { data: deal, error: dealError } = await supabase.from("deals").insert({
       upload_id: uploadId,
       status: "Lead",
       first_name: nameParts[0] || null,
@@ -332,7 +332,30 @@ export default function LeadGen() {
       company_vertical: lead.vertical || null,
       country: lead.location || null,
       description: lead.summary || null,
-    });
+    }).select("id").single();
+
+    if (dealError || !deal) {
+      console.error("Failed to insert deal", dealError);
+      return;
+    }
+
+    // Auto-assign enriched champions as deal contacts
+    if (lead.champions?.length) {
+      const contacts = lead.champions.map((c) => {
+        const parts = (c.name || "").trim().split(" ");
+        return {
+          deal_id: deal.id,
+          is_champion: true,
+          first_name: parts[0] || null,
+          last_name: parts.slice(1).join(" ") || null,
+          job_title: c.title || null,
+          linkedin_url: c.linkedin_url || null,
+          company: lead.company || null,
+        };
+      });
+      const { error: contactsError } = await supabase.from("deal_contacts").insert(contacts);
+      if (contactsError) console.error("Failed to insert champions as contacts", contactsError);
+    }
   }, []);
 
   const handleApprove = useCallback(
