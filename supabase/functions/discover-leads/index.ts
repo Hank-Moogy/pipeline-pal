@@ -53,7 +53,7 @@ serve(async (req) => {
           query,
           type: "auto",
           category: "company",
-          numResults: 20,
+          numResults: 50,
           contents: {
             highlights: { maxCharacters: 2000 },
           },
