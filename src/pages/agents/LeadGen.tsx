@@ -5,12 +5,13 @@ import { AgentLayout } from "@/components/agents/AgentLayout";
 import { LeadFilters, emptyFilters, type LeadFilterValues } from "@/components/agents/lead-gen/LeadFilters";
 import { LeadSearchCenter } from "@/components/agents/lead-gen/LeadSearchCenter";
 import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/components/agents/lead-gen/LeadResultsTable";
-import { UserSearch, Bookmark } from "lucide-react";
+import { UserSearch, Bookmark, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: string, query: string) => void }) {
   const [open, setOpen] = useState(false);
