@@ -49,6 +49,45 @@ function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: stri
   );
 }
 
+function SearchQueryDisplay({ query, resultCount }: { query: string; resultCount: number }) {
+  const [open, setOpen] = useState(true);
+  const isLong = query.length > 200;
+
+  return (
+    <div className="border border-border/40 rounded-xl bg-card p-4 space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Search query</p>
+            {!isLong || open ? (
+              <p className="text-sm text-foreground mt-0.5 break-words">{query}</p>
+            ) : (
+              <p className="text-sm text-foreground mt-0.5 break-words line:4 line-clamp-2">{query}</p>
+            )}
+          </div>
+        </div>
+        {isLong && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1 shrink-0"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {open ? "Show less" : "Show more"}
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {resultCount} result{resultCount !== 1 ? "s" : ""} found
+        </p>
+      </div>
+    </div>
+  );
+}
+
 interface SavedICP {
   id: string;
   name: string;
