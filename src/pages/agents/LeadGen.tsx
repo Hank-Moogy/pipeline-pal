@@ -63,7 +63,7 @@ function SearchQueryDisplay({ query, resultCount }: { query: string; resultCount
             {!isLong || open ? (
               <p className="text-sm text-foreground mt-0.5 break-words">{query}</p>
             ) : (
-              <p className="text-sm text-foreground mt-0.5 break-words line:4 line-clamp-2">{query}</p>
+              <p className="text-sm text-foreground mt-0.5 break-words line-clamp-2">{query}</p>
             )}
           </div>
         </div>
