@@ -490,6 +490,10 @@ export default function LeadGen() {
                 <SaveAsICPButton query={lastQuery} onSave={handleSaveICP} />
               </div>
 
+              {lastQuery && (
+                <SearchQueryDisplay query={lastQuery} resultCount={filteredLeads.length} />
+              )}
+
               {isSearching && <SearchLoadingAnimation />}
               <LeadResultsTable
                 leads={filteredLeads}
