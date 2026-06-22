@@ -5,12 +5,13 @@ import { AgentLayout } from "@/components/agents/AgentLayout";
 import { LeadFilters, emptyFilters, type LeadFilterValues } from "@/components/agents/lead-gen/LeadFilters";
 import { LeadSearchCenter } from "@/components/agents/lead-gen/LeadSearchCenter";
 import { LeadResultsTable, SearchLoadingAnimation, type LeadResult } from "@/components/agents/lead-gen/LeadResultsTable";
-import { UserSearch, Bookmark } from "lucide-react";
+import { UserSearch, Bookmark, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: string, query: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -45,6 +46,45 @@ function SaveAsICPButton({ query, onSave }: { query: string; onSave: (name: stri
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function SearchQueryDisplay({ query, resultCount }: { query: string; resultCount: number }) {
+  const [open, setOpen] = useState(true);
+  const isLong = query.length > 200;
+
+  return (
+    <div className="border border-border/40 rounded-xl bg-card p-4 space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Search query</p>
+            {!isLong || open ? (
+              <p className="text-sm text-foreground mt-0.5 break-words">{query}</p>
+            ) : (
+              <p className="text-sm text-foreground mt-0.5 break-words line-clamp-2">{query}</p>
+            )}
+          </div>
+        </div>
+        {isLong && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1 shrink-0"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {open ? "Show less" : "Show more"}
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {resultCount} result{resultCount !== 1 ? "s" : ""} found
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -449,6 +489,10 @@ export default function LeadGen() {
                 </button>
                 <SaveAsICPButton query={lastQuery} onSave={handleSaveICP} />
               </div>
+
+              {lastQuery && (
+                <SearchQueryDisplay query={lastQuery} resultCount={filteredLeads.length} />
+              )}
 
               {isSearching && <SearchLoadingAnimation />}
               <LeadResultsTable
